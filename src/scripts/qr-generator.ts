@@ -54,34 +54,55 @@ function createTextEmojiImage(text: string, size: number = 64, fontFamily: strin
 // Generate URL for image-mode emoji (Noto Emoji from CDN)
 // using unicode hex point and apply hue rotation via canvas
 async function createSvgEmojiImage(text: string, size: number = 64, hue: number = 0): Promise<string> {
-  const codePoint = text.codePointAt(0);
-  if (!codePoint) return '';
-  const hex = codePoint.toString(16).toLowerCase();
-  const url = `https://raw.githubusercontent.com/googlefonts/noto-emoji/main/svg/emoji_u${hex}.svg`;
+  const codePoints = [...text]
+    .map(c => c.codePointAt(0)?.toString(16).toLowerCase())
+    .filter(cp => cp !== undefined && cp !== 'fe0f'); // Noto often omits FE0F for single chars but keep check
+    
+  if (codePoints.length === 0) return '';
+  
+  // Noto Emoji naming: emoji_u[cp1]_[cp2]...
+  const hexName = codePoints.join('_');
+  const url = `https://raw.githubusercontent.com/googlefonts/noto-emoji/main/svg/emoji_u${hexName}.svg`;
 
   return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
+    
+    const fallback = async () => {
+       const fb = await createTextEmojiImage(text, size, undefined, undefined, hue);
+       resolve(fb);
+    };
+
     img.onload = () => {
       const canvas = document.createElement('canvas');
       canvas.width = size;
       canvas.height = size;
       const ctx = canvas.getContext('2d');
-      if (!ctx) return resolve(url); // fallback
+      if (!ctx) return fallback();
 
-      // Clear
       ctx.clearRect(0, 0, size, size);
-      
-      // Apply hue rotate
       if (hue !== 0) {
         ctx.filter = `hue-rotate(${hue}deg)`;
       }
-      
       ctx.drawImage(img, 0, 0, size, size);
       resolve(canvas.toDataURL('image/png'));
     };
-    img.onerror = () => resolve(url);
+
+    img.onerror = () => {
+       // Try fallback without FE0F first? 
+       // Actually most modern combinations like 🧑‍💻 or 🐈‍⬛ are complex.
+       // If perfectly matching SVG is not found, fallback to system font (Text Mode)
+       fallback();
+    };
+
     img.src = url;
+    
+    // Safety timeout for slow network
+    setTimeout(() => {
+      if (img.complete) return;
+      img.src = '';
+      fallback();
+    }, 2500);
   });
 }
 
