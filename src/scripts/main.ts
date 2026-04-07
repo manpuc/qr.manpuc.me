@@ -30,17 +30,17 @@ const el = {
   emojiMode: document.getElementById('input-emoji-mode') as HTMLSelectElement,
   emojiText: document.getElementById('input-emoji') as HTMLInputElement,
   emojiWrap: document.getElementById('emoji-input-wrap') as HTMLElement,
-  
+
   preview: document.getElementById('qr-preview') as HTMLElement,
   alert: document.getElementById('readability-alert') as HTMLElement,
   alertText: document.getElementById('alert-text') as HTMLElement,
-  
+
   btnTheme: document.getElementById('btn-theme') as HTMLButtonElement,
   btnLang: document.getElementById('btn-lang') as HTMLButtonElement,
   btnShare: document.getElementById('btn-share') as HTMLButtonElement,
   btnPng: document.getElementById('btn-dl-png') as HTMLButtonElement,
   btnSvg: document.getElementById('btn-dl-svg') as HTMLButtonElement,
-  
+
   historyList: document.getElementById('history-list') as HTMLElement,
   historySec: document.getElementById('history-section') as HTMLElement,
   qrRadius: document.getElementById('input-qr-radius') as HTMLInputElement,
@@ -72,24 +72,24 @@ async function renderNow() {
     } else {
       el.preview.classList.remove('checker-pattern-bg');
     }
-    
+
     // Apply background radius to the first child of the preview (the QR SVG)
     const qrSvg = el.preview.querySelector('svg, img, canvas') as HTMLElement;
     if (qrSvg) {
       qrSvg.style.borderRadius = `${state.qrRadius}px`;
     }
   });
-  
+
   // 2. Check Readability
   const readability = checkQRReadability(
-    state.fgColor, 
-    state.bgColor, 
-    state.transparentBg, 
+    state.fgColor,
+    state.bgColor,
+    state.transparentBg,
     state.dotStyle,
     state.emojiMode !== 'none',
     state.errorCorrection
   );
-  
+
   el.alert.className = `alert ${readability.level}`;
   // Use translations
   const msg = state.language === 'ja' ? readability.messageJa : readability.messageEn;
@@ -143,7 +143,7 @@ async function renderNow() {
   // 以前の制限(maxLength=1等)が原因で絵文字(サロゲートペア等)が入力できなかったため
   // ここでの物理的な文字数制限は排除し、文字数は生成エンジン(qr-generator)側で
   // 描画サイズに合わせて自動調整(フィット)させるようにします。
-  el.emojiText.maxLength = 50; 
+  el.emojiText.maxLength = 50;
 }
 
 function bindEvents() {
@@ -152,7 +152,7 @@ function bindEvents() {
     store.update({ data: (e.target as HTMLInputElement).value || 'https://qr.manpuc.me/' }, true);
     debounceRender();
   });
-  
+
   el.size.addEventListener('change', (e) => {
     store.update({ size: parseInt((e.target as HTMLSelectElement).value) });
   });
@@ -276,11 +276,11 @@ function bindEvents() {
       const direction = e.deltaY > 0 ? -1 : 1;
       const currentVal = isFloat ? parseFloat(input.value) : parseInt(input.value);
       let val = currentVal + (direction * step);
-      
+
       const minVal = input.min !== "" ? parseFloat(input.min) : -Infinity;
       const maxVal = input.max !== "" ? parseFloat(input.max) : Infinity;
       val = Math.max(minVal, Math.min(maxVal, val));
-      
+
       input.value = val.toString();
       input.dispatchEvent(new Event('input', { bubbles: true }));
       input.dispatchEvent(new Event('change', { bubbles: true }));
@@ -297,7 +297,7 @@ function bindEvents() {
   el.btnShare.addEventListener('click', async () => {
     saveToHistory(store.state, currentSvgSource);
     const url = getShareUrl();
-    
+
     if (navigator.share && navigator.canShare) {
       try {
         const blob = await getRawBlob('png');
@@ -314,7 +314,7 @@ function bindEvents() {
         }
       } catch (e) {}
     }
-    
+
     if (navigator.share) {
       try {
         await navigator.share({
@@ -360,7 +360,7 @@ function updateFormFromState() {
   el.emojiMode.value = state.emojiMode;
   el.emojiText.value = state.emojiText;
   el.qrRadius.value = state.qrRadius.toString();
-  
+
   el.emojiHue.value = state.emojiHue.toString();
   el.emojiSize.value = Math.round(state.emojiSize * 100).toString();
   el.emojiFont.value = state.emojiFont;
@@ -387,14 +387,14 @@ function renderHistory() {
     el.historySec.classList.add('hidden');
     return;
   }
-  
+
   el.historySec.classList.remove('hidden');
   el.historyList.innerHTML = '';
-  
+
   items.forEach(item => {
     const div = document.createElement('div');
     div.className = 'history-item';
-    
+
     const date = new Date(item.date).toLocaleString(store.state.language === 'ja' ? 'ja-JP' : 'en-US', {
       month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
     });
@@ -430,7 +430,7 @@ function renderHistory() {
 
     div.addEventListener('click', (e) => {
       const target = e.target as HTMLElement;
-      
+
       // Delete action
       if (target.closest('.history-item-delete')) {
         e.stopPropagation();
@@ -438,7 +438,7 @@ function renderHistory() {
         if (id) deleteHistoryItem(id);
         return;
       }
-      
+
       // Load action (on button or card click)
       loadHistoryItem(item.id);
       window.scrollTo({ top: 0, behavior: 'smooth' });
