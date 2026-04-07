@@ -2,13 +2,11 @@
 import { defineConfig } from 'astro/config';
 import astroPwa from '@vite-pwa/astro';
 import sitemap from '@astrojs/sitemap';
-import vercel from '@astrojs/vercel';
 
 // https://astro.build/config
 export default defineConfig({
   site: 'https://qr.manpuc.me',
-  output: 'server',
-  adapter: vercel(),
+  output: 'static',
   integrations: [
     sitemap(),
     astroPwa({

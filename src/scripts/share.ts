@@ -12,8 +12,13 @@ export function getShareUrl(): string {
     t: state.transparentBg ? 1 : 0,
     ds: state.dotStyle,
     em: state.emojiMode,
-    et: state.emojiText,
-    ec: state.errorCorrection
+    et: state.emojiText ? encodeURIComponent(state.emojiText) : "", // Prevent Unicode mangling
+    ef: state.emojiFont,
+    efw: state.emojiFontWeight,
+    eh: state.emojiHue,
+    es: state.emojiSize,
+    ec: state.errorCorrection,
+    qrRadius: state.qrRadius
   };
 
   const jsonStr = JSON.stringify(minimalState);
@@ -40,8 +45,13 @@ export function loadFromUrl() {
           transparentBg: parsed.t === 1,
           dotStyle: parsed.ds,
           emojiMode: parsed.em,
-          emojiText: parsed.et,
+          emojiText: parsed.et ? decodeURIComponent(parsed.et) : "",
+          emojiFont: parsed.ef,
+          emojiFontWeight: parsed.efw,
+          emojiHue: parsed.eh,
+          emojiSize: parsed.es,
           errorCorrection: parsed.ec,
+          qrRadius: parsed.qrRadius,
         };
         store.update(newState);
         

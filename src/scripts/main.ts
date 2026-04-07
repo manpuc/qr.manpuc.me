@@ -1,6 +1,6 @@
 import { store, type AppState, type DotType, type EmojiMode, type ErrorCorrection } from './store';
 import { initTheme } from './theme';
-import { generateQR, downloadQR } from './qr-generator';
+import { generateQR, downloadQR, getRawBlob } from './qr-generator';
 import { checkQRReadability } from './color-contrast';
 import { getShareUrl, loadFromUrl } from './share';
 import { getHistory, saveToHistory, deleteHistoryItem, loadHistoryItem } from './history';
@@ -44,6 +44,20 @@ const el = {
   historyList: document.getElementById('history-list') as HTMLElement,
   historySec: document.getElementById('history-section') as HTMLElement,
   qrRadius: document.getElementById('input-qr-radius') as HTMLInputElement,
+  emojiHue: document.getElementById('input-emoji-hue') as HTMLInputElement,
+  emojiSize: document.getElementById('input-emoji-size') as HTMLInputElement,
+  emojiFont: document.getElementById('input-emoji-font') as HTMLSelectElement,
+  emojiWeight: document.getElementById('input-emoji-weight') as HTMLInputElement,
+  emojiCommonControls: document.getElementById('emoji-common-controls') as HTMLElement,
+  emojiHueWrap: document.getElementById('emoji-hue-wrap') as HTMLElement,
+  emojiTextControls: document.getElementById('emoji-text-controls') as HTMLElement,
+  emojiWarn: document.getElementById('emoji-warning') as HTMLElement,
+  textWarn: document.getElementById('text-warning') as HTMLElement,
+  valEmojiSize: document.getElementById('val-emoji-size') as HTMLElement,
+  valEmojiHue: document.getElementById('val-emoji-hue') as HTMLElement,
+  valEmojiWeight: document.getElementById('val-emoji-weight') as HTMLElement,
+  emojiFontWrap: document.getElementById('emoji-font-wrap') as HTMLElement,
+  emojiWeightWrap: document.getElementById('emoji-weight-wrap') as HTMLElement,
 };
 
 async function renderNow() {
@@ -81,6 +95,60 @@ async function renderNow() {
   const msg = state.language === 'ja' ? readability.messageJa : readability.messageEn;
   el.alertText.textContent = msg;
   el.alert.classList.remove('hidden');
+
+  // Update text warn based on main data payload
+  const containsMultibyte = /[^\x00-\x7F]+/.test(state.data);
+  if (containsMultibyte && state.data.length > 0) {
+    el.textWarn.classList.remove('hidden');
+  } else {
+    el.textWarn.classList.add('hidden');
+  }
+
+  // Check if string contains only emoji elements
+  const isEmoji = /^[\p{Emoji}\p{Emoji_Presentation}\p{Extended_Pictographic}\uFE0F\u200D]+$/u.test(state.emojiText);
+
+  if (state.emojiMode !== 'none') {
+    if (isEmoji && state.emojiText.length > 0) {
+      el.emojiHueWrap?.classList.remove('hidden');
+      // In text mode, if it's pure emoji, hide font/weight settings
+      if (state.emojiMode === 'text') {
+        el.emojiFontWrap?.classList.add('hidden');
+        el.emojiWeightWrap?.classList.add('hidden');
+      } else {
+        el.emojiFontWrap?.classList.remove('hidden');
+        el.emojiWeightWrap?.classList.remove('hidden');
+      }
+    } else {
+      el.emojiHueWrap?.classList.add('hidden');
+      el.emojiFontWrap?.classList.remove('hidden');
+      el.emojiWeightWrap?.classList.remove('hidden');
+    }
+  }
+
+  // Update slider value displays
+  if (el.valEmojiSize) el.valEmojiSize.textContent = `${Math.round(state.emojiSize * 100)}%`;
+  if (el.valEmojiHue) el.valEmojiHue.textContent = state.emojiHue.toString();
+  if (el.valEmojiWeight) el.valEmojiWeight.textContent = state.emojiFontWeight.toString();
+
+
+
+  // Update emoji warn for image mode
+  if (state.emojiMode === 'image') {
+    if (!isEmoji && state.emojiText.length > 0) el.emojiWarn.classList.remove('hidden');
+    else el.emojiWarn.classList.add('hidden');
+  } else {
+    el.emojiWarn.classList.add('hidden');
+  }
+
+  // Dynamic maxLength for emojiText based on size
+  // 0.5 -> 1, 0.4 -> 2, 0.3 -> 3, 0.2 -> 6, 0.1 -> 15
+  let maxChars = 1;
+  if (state.emojiSize <= 0.15) maxChars = 15;
+  else if (state.emojiSize <= 0.25) maxChars = 6;
+  else if (state.emojiSize <= 0.35) maxChars = 3;
+  else if (state.emojiSize <= 0.45) maxChars = 2;
+  else maxChars = 1;
+  el.emojiText.maxLength = maxChars;
 }
 
 function bindEvents() {
@@ -155,8 +223,39 @@ function bindEvents() {
     store.update({ emojiMode: mode });
   });
 
-  el.emojiText.addEventListener('input', (e) => {
+  let isIME = false;
+  el.emojiText.addEventListener('compositionstart', () => { isIME = true; });
+  el.emojiText.addEventListener('compositionend', (e) => {
+    isIME = false;
     store.update({ emojiText: (e.target as HTMLInputElement).value }, true);
+    debounceRender();
+  });
+  el.emojiText.addEventListener('input', (e) => {
+    if (isIME) return;
+    store.update({ emojiText: (e.target as HTMLInputElement).value }, true);
+    debounceRender();
+  });
+
+  el.emojiHue.addEventListener('input', (e) => {
+    const val = parseInt((e.target as HTMLInputElement).value);
+    if (el.valEmojiHue) el.valEmojiHue.textContent = val.toString();
+    store.update({ emojiHue: val }, true);
+    debounceRender();
+  });
+  el.emojiSize.addEventListener('input', (e) => {
+    const val = parseInt((e.target as HTMLInputElement).value);
+    if (el.valEmojiSize) el.valEmojiSize.textContent = `${val}%`;
+    store.update({ emojiSize: val / 100 }, true);
+    debounceRender();
+  });
+  el.emojiFont.addEventListener('change', (e) => {
+    store.update({ emojiFont: (e.target as HTMLSelectElement).value }, true);
+    debounceRender();
+  });
+  el.emojiWeight.addEventListener('input', (e) => {
+    const val = parseInt((e.target as HTMLInputElement).value);
+    if (el.valEmojiWeight) el.valEmojiWeight.textContent = val.toString();
+    store.update({ emojiFontWeight: val }, true);
     debounceRender();
   });
 
@@ -174,9 +273,53 @@ function bindEvents() {
     store.update({ theme: nextTheme });
   });
 
+  // Wheel interaction helper
+  const addWheelListener = (input: HTMLInputElement, isFloat = false) => {
+    input.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const step = parseFloat(input.step) || 1;
+      const direction = e.deltaY > 0 ? -1 : 1;
+      const currentVal = isFloat ? parseFloat(input.value) : parseInt(input.value);
+      let val = currentVal + (direction * step);
+      
+      const minVal = input.min !== "" ? parseFloat(input.min) : -Infinity;
+      const maxVal = input.max !== "" ? parseFloat(input.max) : Infinity;
+      val = Math.max(minVal, Math.min(maxVal, val));
+      
+      input.value = val.toString();
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    }, { passive: false });
+  };
+
+  addWheelListener(el.margin);
+  addWheelListener(el.qrRadius);
+  addWheelListener(el.emojiHue);
+  addWheelListener(el.emojiSize);
+  addWheelListener(el.emojiWeight);
+
+
   el.btnShare.addEventListener('click', async () => {
     saveToHistory(store.state, currentSvgSource);
     const url = getShareUrl();
+    
+    if (navigator.share && navigator.canShare) {
+      try {
+        const blob = await getRawBlob('png');
+        if (blob) {
+          const file = new File([blob], 'share.png', { type: 'image/png' });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              title: t('appTitle'),
+              url: url,
+              files: [file]
+            });
+            return;
+          }
+        }
+      } catch (e) {}
+    }
+    
     if (navigator.share) {
       try {
         await navigator.share({
@@ -186,11 +329,11 @@ function bindEvents() {
       } catch (e) {
         // Fallback to clipboard
         navigator.clipboard.writeText(url);
-        alert(t('copiedMsg'));
+        alert(t('copiedMsg') || 'Copied to clipboard');
       }
     } else {
       navigator.clipboard.writeText(url);
-      alert(t('copiedMsg'));
+      alert(t('copiedMsg') || 'Copied to clipboard');
     }
   });
 
@@ -223,10 +366,23 @@ function updateFormFromState() {
   el.emojiText.value = state.emojiText;
   el.qrRadius.value = state.qrRadius.toString();
   
-  if (state.emojiMode === 'none') {
-    el.emojiWrap.classList.add('hidden');
-  } else {
+  el.emojiHue.value = state.emojiHue.toString();
+  el.emojiSize.value = Math.round(state.emojiSize * 100).toString();
+  el.emojiFont.value = state.emojiFont;
+  el.emojiWeight.value = state.emojiFontWeight.toString();
+
+  if (state.emojiMode === 'image') {
     el.emojiWrap.classList.remove('hidden');
+    el.emojiCommonControls.classList.remove('hidden');
+    el.emojiTextControls.classList.add('hidden');
+  } else if (state.emojiMode === 'text') {
+    el.emojiWrap.classList.remove('hidden');
+    el.emojiTextControls.classList.remove('hidden');
+    el.emojiCommonControls.classList.remove('hidden');
+  } else {
+    el.emojiWrap.classList.add('hidden');
+    el.emojiCommonControls.classList.add('hidden');
+    el.emojiTextControls.classList.add('hidden');
   }
 }
 

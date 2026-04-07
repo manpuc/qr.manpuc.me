@@ -12,6 +12,10 @@ export interface AppState {
   dotStyle: DotType;
   emojiMode: EmojiMode;
   emojiText: string;
+  emojiFont: string;
+  emojiFontWeight: number;
+  emojiHue: number;
+  emojiSize: number;
   errorCorrection: ErrorCorrection;
   theme: 'light' | 'dark' | 'auto';
   language: 'ja' | 'en';
@@ -28,6 +32,10 @@ const defaultState: AppState = {
   dotStyle: 'rounded',
   emojiMode: 'none',
   emojiText: '🌟',
+  emojiFont: 'sans-serif',
+  emojiFontWeight: 700,
+  emojiHue: 0,
+  emojiSize: 0.4,
   errorCorrection: 'M',
   theme: 'auto',
   language: 'ja',
@@ -81,6 +89,10 @@ class Store {
         dotStyle: this.state.dotStyle,
         emojiMode: this.state.emojiMode,
         emojiText: this.state.emojiText,
+        emojiFont: this.state.emojiFont,
+        emojiFontWeight: this.state.emojiFontWeight,
+        emojiHue: this.state.emojiHue,
+        emojiSize: this.state.emojiSize,
         errorCorrection: this.state.errorCorrection,
         qrRadius: this.state.qrRadius,
       }));

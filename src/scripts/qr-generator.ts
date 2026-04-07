@@ -8,7 +8,7 @@ const QRCodeStyling = (qrCodeStylingModule as any).default || qrCodeStylingModul
 let qrCode: any = null;
 
 // Offscreen canvas for rendering text as image
-function createTextEmojiImage(text: string, size: number = 64): Promise<string> {
+function createTextEmojiImage(text: string, size: number = 64, fontFamily: string = '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif', weight: number = 700, hue: number = 0): Promise<string> {
   return new Promise((resolve) => {
     const canvas = document.createElement('canvas');
     canvas.width = size;
@@ -16,30 +16,73 @@ function createTextEmojiImage(text: string, size: number = 64): Promise<string> 
     const ctx = canvas.getContext('2d');
     if (!ctx) return resolve('');
 
-    // Clear background
-    ctx.clearRect(0, 0, size, size);
+    const textLen = [...text].length;
     
-    // Draw text centered
-    // Note: Canvas ctx.font does not evaluate CSS var() natively, 
-    // leading to fallback 10px font. Use exact font stacks for Emojis.
-    ctx.font = `${Math.floor(size * 0.85)}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+    // Better dynamic scaling
+    let fontSize = size * 0.8;
+    ctx.font = `${weight} ${fontSize}px ${fontFamily}`;
+    
+    const metrics = ctx.measureText(text);
+    const textWidth = metrics.width;
+    
+    // Shrink if horizontal scale exceeds bounds
+    if (textWidth > size * 0.9) {
+      fontSize = Math.floor(fontSize * (size * 0.9 / textWidth));
+      ctx.font = `${weight} ${fontSize}px ${fontFamily}`;
+    }
+    
+    // Apply hue rotate
+    if (hue !== 0) {
+      ctx.filter = `hue-rotate(${hue}deg)`;
+    }
+    
     ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(text, size / 2, size / 2 + (size * 0.05)); // slight vertical adjust
+    ctx.textBaseline = 'alphabetic'; // Reliable for manual calculation
+    ctx.fillStyle = '#000000';
+    
+    // Mathematically perfect centering using font metrics
+    // Center point - (total height / 2) + ascent = top-aligned pos + ascent
+    const actualHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+    const yPos = (size / 2) + (actualHeight / 2) - metrics.actualBoundingBoxDescent;
+
+    ctx.fillText(text, size / 2, yPos);
 
     resolve(canvas.toDataURL('image/png'));
   });
 }
 
 // Generate URL for image-mode emoji (Noto Emoji from CDN)
-// using unicode hex point
-function getEmojiImageUrl(text: string): string {
-  // Extract hex code of first emoji roughly
+// using unicode hex point and apply hue rotation via canvas
+async function createSvgEmojiImage(text: string, size: number = 64, hue: number = 0): Promise<string> {
   const codePoint = text.codePointAt(0);
   if (!codePoint) return '';
   const hex = codePoint.toString(16).toLowerCase();
-  // Using direct svg from unpkg or cdnjs or github raw
-  return `https://raw.githubusercontent.com/googlefonts/noto-emoji/main/svg/emoji_u${hex}.svg`;
+  const url = `https://raw.githubusercontent.com/googlefonts/noto-emoji/main/svg/emoji_u${hex}.svg`;
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return resolve(url); // fallback
+
+      // Clear
+      ctx.clearRect(0, 0, size, size);
+      
+      // Apply hue rotate
+      if (hue !== 0) {
+        ctx.filter = `hue-rotate(${hue}deg)`;
+      }
+      
+      ctx.drawImage(img, 0, 0, size, size);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror = () => resolve(url);
+    img.src = url;
+  });
 }
 
 export async function generateQR(state: AppState, container: HTMLElement) {
@@ -51,9 +94,11 @@ export async function generateQR(state: AppState, container: HTMLElement) {
     if (state.emojiMode === 'text') {
       // 解像度をQRコードの出力サイズに比例させて設定 (高DPIにも耐えうる0.8倍サイズ)
       const renderRes = Math.max(64, Math.round(state.size * 0.8));
-      imageSource = await createTextEmojiImage(state.emojiText, renderRes);
+      imageSource = await createTextEmojiImage(state.emojiText, renderRes, state.emojiFont, state.emojiFontWeight, state.emojiHue);
     } else {
-      imageSource = getEmojiImageUrl(state.emojiText);
+      // 解像度をQRコードの出力サイズに比例させて設定 (高DPIにも耐えうる0.8倍サイズ)
+      const renderRes = Math.max(64, Math.round(state.size * 0.8));
+      imageSource = await createSvgEmojiImage(state.emojiText, renderRes, state.emojiHue);
     }
   }
 
@@ -75,7 +120,7 @@ export async function generateQR(state: AppState, container: HTMLElement) {
     },
     imageOptions: {
       hideBackgroundDots: true,
-      imageSize: 0.4,
+      imageSize: state.emojiSize,
       margin: 4,
       crossOrigin: 'anonymous'
     },
@@ -131,5 +176,9 @@ export async function downloadQR(state: AppState, ext: 'png' | 'svg', sizeMultip
     extension: ext
   });
   // Restore size
-  await qrCode.update({ width: origSize, height: origSize });
+}
+
+export async function getRawBlob(ext: 'png' | 'svg'): Promise<Blob | null> {
+  if (!qrCode) return null;
+  return await qrCode.getRawData(ext);
 }
