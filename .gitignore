@@ -3,6 +3,7 @@ node_modules/
 .pnpm-store/
 .astro
 dist/
+.vercel
 
 # --- Environment & Credentials ---
 .env
