@@ -140,15 +140,10 @@ async function renderNow() {
     el.emojiWarn.classList.add('hidden');
   }
 
-  // Dynamic maxLength for emojiText based on size
-  // 0.5 -> 1, 0.4 -> 2, 0.3 -> 3, 0.2 -> 6, 0.1 -> 15
-  let maxChars = 1;
-  if (state.emojiSize <= 0.15) maxChars = 15;
-  else if (state.emojiSize <= 0.25) maxChars = 6;
-  else if (state.emojiSize <= 0.35) maxChars = 3;
-  else if (state.emojiSize <= 0.45) maxChars = 2;
-  else maxChars = 1;
-  el.emojiText.maxLength = maxChars;
+  // 以前の制限(maxLength=1等)が原因で絵文字(サロゲートペア等)が入力できなかったため
+  // ここでの物理的な文字数制限は排除し、文字数は生成エンジン(qr-generator)側で
+  // 描画サイズに合わせて自動調整(フィット)させるようにします。
+  el.emojiText.maxLength = 50; 
 }
 
 function bindEvents() {
