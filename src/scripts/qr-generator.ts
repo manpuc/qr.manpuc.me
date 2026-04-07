@@ -17,29 +17,29 @@ function createTextEmojiImage(text: string, size: number = 64, fontFamily: strin
     if (!ctx) return resolve('');
 
     const textLen = [...text].length;
-    
+
     // Better dynamic scaling
     let fontSize = size * 0.8;
     ctx.font = `${weight} ${fontSize}px ${fontFamily}`;
-    
+
     const metrics = ctx.measureText(text);
     const textWidth = metrics.width;
-    
+
     // Shrink if horizontal scale exceeds bounds
     if (textWidth > size * 0.9) {
       fontSize = Math.floor(fontSize * (size * 0.9 / textWidth));
       ctx.font = `${weight} ${fontSize}px ${fontFamily}`;
     }
-    
+
     // Apply hue rotate
     if (hue !== 0) {
       ctx.filter = `hue-rotate(${hue}deg)`;
     }
-    
+
     ctx.textAlign = 'center';
     ctx.textBaseline = 'alphabetic'; // Reliable for manual calculation
     ctx.fillStyle = '#000000';
-    
+
     // Mathematically perfect centering using font metrics
     // Center point - (total height / 2) + ascent = top-aligned pos + ascent
     const actualHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
@@ -57,9 +57,9 @@ async function createSvgEmojiImage(text: string, size: number = 64, hue: number 
   const codePoints = [...text]
     .map(c => c.codePointAt(0)?.toString(16).toLowerCase())
     .filter(cp => cp !== undefined && cp !== 'fe0f'); // Noto often omits FE0F for single chars but keep check
-    
+
   if (codePoints.length === 0) return '';
-  
+
   // Noto Emoji naming: emoji_u[cp1]_[cp2]...
   const hexName = codePoints.join('_');
   const url = `https://raw.githubusercontent.com/googlefonts/noto-emoji/main/svg/emoji_u${hexName}.svg`;
@@ -67,10 +67,10 @@ async function createSvgEmojiImage(text: string, size: number = 64, hue: number 
   return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
-    
+
     const fallback = async () => {
-       const fb = await createTextEmojiImage(text, size, undefined, undefined, hue);
-       resolve(fb);
+      const fb = await createTextEmojiImage(text, size, undefined, undefined, hue);
+      resolve(fb);
     };
 
     img.onload = () => {
@@ -89,14 +89,14 @@ async function createSvgEmojiImage(text: string, size: number = 64, hue: number 
     };
 
     img.onerror = () => {
-       // Try fallback without FE0F first? 
-       // Actually most modern combinations like 🧑‍💻 or 🐈‍⬛ are complex.
-       // If perfectly matching SVG is not found, fallback to system font (Text Mode)
-       fallback();
+      // Try fallback without FE0F first? 
+      // Actually most modern combinations like 🧑‍💻 or 🐈‍⬛ are complex.
+      // If perfectly matching SVG is not found, fallback to system font (Text Mode)
+      fallback();
     };
 
     img.src = url;
-    
+
     // Safety timeout for slow network
     setTimeout(() => {
       if (img.complete) return;
@@ -108,7 +108,7 @@ async function createSvgEmojiImage(text: string, size: number = 64, hue: number 
 
 export async function generateQR(state: AppState, container: HTMLElement) {
   // Build options for qr-code-styling
-  
+
   let imageSource = '';
   // Set image if emoji is enabled
   if (state.emojiMode !== 'none' && state.emojiText) {

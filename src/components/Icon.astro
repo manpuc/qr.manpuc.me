@@ -1,11 +1,22 @@
 ---
-import { icon } from '@fortawesome/fontawesome-svg-core';
-import { 
-  faDownload, faCopy, faTrash, faGear, 
-  faShareNodes, faLanguage, faClockRotateLeft, 
-  faWandMagicSparkles, faPalette, faSun, faMoon, faCheck, faInfoCircle, faExclamationTriangle,
-  faRotateRight
-} from '@fortawesome/free-solid-svg-icons';
+import { icon } from "@fortawesome/fontawesome-svg-core";
+import {
+  faDownload,
+  faCopy,
+  faTrash,
+  faGear,
+  faShareNodes,
+  faLanguage,
+  faClockRotateLeft,
+  faWandMagicSparkles,
+  faPalette,
+  faSun,
+  faMoon,
+  faCheck,
+  faInfoCircle,
+  faExclamationTriangle,
+  faRotateRight,
+} from "@fortawesome/free-solid-svg-icons";
 
 const icons = {
   download: faDownload,
@@ -22,27 +33,34 @@ const icons = {
   check: faCheck,
   info: faInfoCircle,
   warning: faExclamationTriangle,
-  rotate: faRotateRight
+  rotate: faRotateRight,
 };
 
 interface Props {
   name: keyof typeof icons;
   class?: string;
   id?: string;
-  'aria-label'?: string;
-  'aria-hidden'?: boolean | "true" | "false";
+  "aria-label"?: string;
+  "aria-hidden"?: boolean | "true" | "false";
 }
 
-const { name, class: className = '', id, 'aria-label': ariaLabel, 'aria-hidden': ariaHidden } = Astro.props;
+const {
+  name,
+  class: className = "",
+  id,
+  "aria-label": ariaLabel,
+  "aria-hidden": ariaHidden,
+} = Astro.props;
 const iconDef = icons[name as keyof typeof icons];
-const iconHtml = iconDef ? icon(iconDef).html[0] : '';
+const iconHtml = iconDef ? icon(iconDef).html[0] : "";
 ---
-<span 
-  class={`inline-icon ${className}`} 
-  id={id} 
-  aria-label={ariaLabel} 
+
+<span
+  class={`inline-icon ${className}`}
+  id={id}
+  aria-label={ariaLabel}
   aria-hidden={ariaHidden === undefined && !ariaLabel ? "true" : ariaHidden}
-  set:html={iconHtml} 
+  set:html={iconHtml}
 />
 
 <style>

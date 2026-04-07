@@ -54,7 +54,7 @@ export function loadFromUrl() {
           qrRadius: parsed.qrRadius,
         };
         store.update(newState);
-        
+
         // Clean URL after loading to avoid sticking
         window.history.replaceState({}, '', url.pathname);
       }

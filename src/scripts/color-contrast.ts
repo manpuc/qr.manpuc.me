@@ -41,8 +41,8 @@ function getBrightnessAndColorDiff(fgHex: string, bgHex: string) {
   const brightnessDiff = Math.abs(br1 - br2);
 
   const colorDiff = (Math.max(fg.r, bg.r) - Math.min(fg.r, bg.r)) +
-                    (Math.max(fg.g, bg.g) - Math.min(fg.g, bg.g)) +
-                    (Math.max(fg.b, bg.b) - Math.min(fg.b, bg.b));
+    (Math.max(fg.g, bg.g) - Math.min(fg.g, bg.g)) +
+    (Math.max(fg.b, bg.b) - Math.min(fg.b, bg.b));
 
   return { brightnessDiff, colorDiff };
 }
@@ -61,8 +61,8 @@ export interface ReadabilityResult {
  * WCAG基準をベースに、明度差・彩度差などのQR固有の条件を加味
  */
 export function checkQRReadability(
-  fgHex: string, 
-  bgHex: string, 
+  fgHex: string,
+  bgHex: string,
   isTransparentBg: boolean,
   dotStyle: string,
   hasEmoji: boolean,
@@ -71,12 +71,12 @@ export function checkQRReadability(
   // 基本指標
   let ratio = getContrastRatio(fgHex, bgHex);
   const { brightnessDiff, colorDiff } = getBrightnessAndColorDiff(fgHex, bgHex);
-  
+
   let effectiveRatio = ratio;
 
   // 背景透過の場合のペナルティ
   if (isTransparentBg) {
-    effectiveRatio *= 0.7; 
+    effectiveRatio *= 0.7;
   }
 
   // QRコードの反転(明るい前景色・暗い背景色)チェック
@@ -122,7 +122,7 @@ export function checkQRReadability(
 
   // 総合判定
   let level: ReadabilityLevel = 'safe';
-  
+
   if (effectiveRatio < 3.0 || brightnessDiff < 100) {
     level = 'danger';
     messagesJa.unshift('コントラストや明度差が低すぎます！読み取れない可能性が高いです。');

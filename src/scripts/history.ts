@@ -24,7 +24,7 @@ export function getHistory(): HistoryItem[] {
 
 export function saveToHistory(state: AppState, svg: string) {
   const current = getHistory();
-  
+
   // Clone relevant state to save
   const stateToSave = {
     data: state.data,
@@ -59,7 +59,7 @@ export function saveToHistory(state: AppState, svg: string) {
   const trimmed = current.slice(0, MAX_HISTORY);
 
   localStorage.setItem(HISTORY_KEY, JSON.stringify(trimmed));
-  
+
   // Dispatch custom event to let UI update
   window.dispatchEvent(new Event('qr-history-updated'));
 }

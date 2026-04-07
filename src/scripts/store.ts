@@ -59,7 +59,7 @@ class Store {
         const parsed = JSON.parse(saved);
         this.state = { ...this.state, ...parsed };
       }
-      
+
       const savedTheme = localStorage.getItem('qr_maker_theme') as 'light' | 'dark' | 'auto';
       if (savedTheme) {
         this.state.theme = savedTheme;
