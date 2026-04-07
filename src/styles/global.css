@@ -1,0 +1,733 @@
+:root {
+  /* =========================================
+     NOTING UI x iOS 26 CONCEPT: LIGHT MODE
+  ========================================= */
+  --color-bg: #f2f2f7;
+  /* iOS standard light background */
+  --color-surface: rgba(255, 255, 255, 0.55);
+  /* iOS Glassmorphism */
+  --color-surface-hover: rgba(255, 255, 255, 1.0);
+  --color-text: #000000;
+  --color-text-muted: #8e8e93;
+  /* iOS muted text */
+
+  --color-primary: #000000;
+  --color-primary-text: #ffffff;
+  --color-primary-hover: rgba(0, 0, 0, 0.85);
+
+  --color-accent-red: #ff3b30;
+  /* iOS red */
+
+  --color-border: rgba(0, 0, 0, 0.1);
+  /* iOS thin border */
+
+  --color-danger: #ff3b30;
+  --color-warning: #ffcc00;
+  --color-success: #34c759;
+
+  --shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.08);
+  --shadow-dynamic: 0 8px 32px rgba(0, 0, 0, 0.15);
+
+  --radius-sm: 16px;
+  --radius-md: 28px;
+  --radius-lg: 40px;
+  --radius-full: 9999px;
+
+  --font-main: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", "Zen Maru Gothic", sans-serif;
+
+  /* iOS Spring Physics Curves */
+  --spring-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --spring-smooth: cubic-bezier(0.25, 1, 0.5, 1);
+  --transition-normal: 0.4s var(--spring-smooth);
+  --transition-fast: 0.25s var(--spring-smooth);
+  --transition-bounce: 0.6s var(--spring-bounce);
+}
+
+[data-theme='dark'] {
+  /* =========================================
+     iOS 26 CONCEPT: AMOLED DARK MODE
+  ========================================= */
+  --color-bg: #000000;
+  --color-surface: rgba(28, 28, 30, 0.45);
+  /* iOS Dark Glassmorphism */
+  --color-surface-hover: rgba(44, 44, 46, 0.9);
+  --color-text: #ffffff;
+  --color-text-muted: #98989d;
+
+  --color-primary: #ffffff;
+  --color-primary-text: #000000;
+  --color-primary-hover: rgba(255, 255, 255, 0.85);
+
+  --color-accent-red: #ff453a;
+  --color-border: rgba(255, 255, 255, 0.1);
+
+  --shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.6);
+  --shadow-dynamic: 0 8px 32px rgba(255, 255, 255, 0.1);
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.5;
+  transition: background-color var(--transition-normal), color var(--transition-normal);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+  letter-spacing: -0.01em;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 80px 20px 120px;
+  animation: fadeUp 0.8s var(--spring-smooth) both;
+}
+
+@keyframes fadeUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+h1,
+h2,
+h3 {
+  font-weight: 700;
+  margin-bottom: 0.6em;
+  letter-spacing: -0.03em;
+}
+
+/* iOS Glassmorphism Card */
+.card {
+  background-color: var(--color-surface);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 20px;
+  /* Precise iOS radius */
+  padding: 24px;
+  margin-bottom: 24px;
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+
+/* --- 標準ボタン (iOS Pill Buttons) --- */
+/* 保存ボタンなどメインのクリック要素 */
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  border-radius: 14px;
+  /* ボタンの角丸（iOS風の少し緩やかな丸み）。50pxなどにすると完全なカプセル型になります */
+  padding: 16px 24px;
+  /* ボタン内の余白（上下16px、左右24px） */
+  font-weight: 600;
+  /* 文字の太さ */
+  background-color: var(--color-primary);
+  /* 背景色 */
+  color: var(--color-primary-text);
+  /* 文字色 */
+  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), background-color var(--transition-fast), opacity var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  /* アイコンとテキストの間隔 */
+  font-size: 16px;
+}
+
+button:hover {
+  background-color: var(--color-primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+button:active {
+  transform: scale(0.96);
+}
+
+/* --- アイコンボタン (右上メニューなど) --- */
+/* 言語切り替えやテーマ変更の四角いアイコン専用ボタン */
+button.icon-btn {
+  color: var(--color-text); /* アイコンの色 */
+  border: 1px solid var(--color-border); /* ボタンの枠線 */
+  padding: 0;
+  width: 44px; /* ボタンの幅（iOS標準の最小タップ領域） */
+  height: 44px; /* ボタンの高さ */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px; /* 四角いボタンの角丸 */
+  flex-shrink: 0;
+  
+  /* ガラスのようなボカシ効果を強調（不透明度を下げて背後をより見えやすく） */
+  background: var(--color-surface); 
+  backdrop-filter: blur(25px) saturate(190%);
+  -webkit-backdrop-filter: blur(25px) saturate(190%);
+  transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
+}
+
+button.icon-btn:hover {
+  background: var(--color-surface-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+button.outline {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+button.outline:hover {
+  background-color: var(--color-surface-hover);
+  transform: scale(1.01) translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* iOS Style Select/Dropdown */
+select {
+  font-family: inherit;
+  width: 100%;
+  padding: 16px 20px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 16px;
+  font-weight: 600;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 18px;
+  cursor: pointer;
+  transition: transform var(--transition-bounce), background-color var(--transition-fast);
+}
+
+select:hover {
+  transform: scale(1.02);
+  background-color: var(--color-surface-hover);
+}
+
+/* Top-Right Controls */
+.top-controls {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  display: flex;
+  gap: 12px;
+  z-index: 1000;
+}
+
+@media (max-width: 600px) {
+  .top-controls {
+    top: 16px;
+    right: 16px;
+  }
+}
+
+/* Theme Icon Toggling */
+.theme-sun,
+.theme-moon {
+  display: none !important;
+  font-size: 1.2rem;
+}
+
+[data-theme='light'] .theme-moon {
+  display: inline-flex !important;
+}
+
+[data-theme='dark'] .theme-sun {
+  display: inline-flex !important;
+}
+
+/* When auto, we show moon as default toggle to dark */
+[data-theme='auto'] .theme-moon {
+  display: inline-flex !important;
+}
+
+/* --- トグルボタンエリア (背景透過設定など) --- */
+/* スイッチとテキストを囲うボックス全体の設定 */
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  /* スイッチと文字の基本の隙間（※これで変わらない場合は下のspanのmargin-leftで調整します） */
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  /* 文字の太さ */
+  padding: 12px 16px;
+  /* ボックス内の余白（12px:上下 16px:左右）。他の入力欄と並べた時に綺麗に見えるように調整 */
+  border: 1px solid var(--color-border);
+  /* ボックスの枠線 */
+  background: var(--color-surface);
+  /* ボックスの背景色 */
+  border-radius: 12px;
+  /* ボックス全体の角丸 */
+  transition: background-color 0.2s, border-color 0.2s, transform 0.2s;
+
+  /* ▼ ボックスの大きさを調整する項目 ▼ */
+  /* width: fit-content; 中身のサイズぴったりにする */
+  width: 100%;
+  /*にすると画面横幅いっぱいに広がります */
+  /* width: 300px; などのように数値を指定して横幅を固定することも可能です */
+
+  height: 60px;
+  /*縦幅を固定したい場合はコメントを外して数値を設定します */
+}
+
+.toggle-label:active {
+  transform: scale(0.98);
+}
+
+.toggle-label input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 51px;
+  height: 31px;
+  background-color: rgba(120, 120, 128, 0.3);
+  border-radius: 16px;
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  flex-shrink: 0;
+
+  /* スイッチ自体の上下左右の位置を微調整したい場合はここで設定します */
+  margin-top: 1.5px;
+  margin-left: 0px;
+  margin-right: 0px;
+  margin-bottom: 0px;
+}
+
+/* スイッチ横のテキスト（背景を透過する〜）の配置・デザイン設定 */
+.toggle-label span {
+  /* Flexboxの中で確実に文字を上下させたい場合は「position」と「top」を使います */
+  /* (正の数で下へ、負の数で上へ移動します 例: top: 2px;) */
+  position: relative;
+  top: -10px;
+
+  /* ▼ 横の隙間が gap で効かない場合の強力な微調整 ▼ */
+  margin-left: 12px;
+  /* ここを 8px などに増やすと、右方向に文字がズレて隙間が広がります */
+  margin-right: 17px;
+
+  /* line-height: 1; 行の高さを変えて上下位置を調整したい場合 */
+  color: var(--color-primary);
+  /* 文字の色もここで変更可能です */
+}
+
+.toggle-label input[type="checkbox"]::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 27px;
+  height: 27px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+  transition: transform 0.3s cubic-bezier(0.3, 1.5, 0.7, 1);
+}
+
+.toggle-label input[type="checkbox"]:checked {
+  background-color: #34c759;
+  /* iOS Success Green */
+}
+
+.toggle-label input[type="checkbox"]:checked::before {
+  transform: translateX(20px);
+}
+
+/* Inputs */
+input[type="text"],
+input[type="number"] {
+  font-family: inherit;
+  width: 100%;
+  padding: 16px 20px;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 16px;
+  font-weight: 500;
+  outline: none;
+  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus {
+  border-color: var(--color-primary);
+  background: var(--color-surface-hover);
+}
+
+/* QR Preview area */
+.qr-preview-wrapper {
+  background: transparent;
+  border-radius: var(--radius-md);
+  padding: 24px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 10px 0;
+  min-height: 280px;
+  position: relative;
+}
+
+.qr-preview-wrapper>* {
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  animation: popIn 0.8s var(--spring-bounce);
+}
+
+@keyframes popIn {
+  0% {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Forces Lightish Checker Pattern for transparency preview */
+.checker-pattern-bg {
+  background-image:
+    linear-gradient(45deg, #e5e5ea 25%, transparent 25%),
+    linear-gradient(135deg, #e5e5ea 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #e5e5ea 75%),
+    linear-gradient(135deg, transparent 75%, #e5e5ea 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 10px 0, 10px -10px, 0px 10px;
+  background-color: #ffffff !important;
+  border: 4px solid var(--color-border);
+}
+
+.form-group {
+  margin-bottom: 24px;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 13px;
+  letter-spacing: -0.01em;
+  color: var(--color-text-muted);
+}
+
+/* History Items iOS Style */
+.history-item {
+  border-radius: 18px;
+  padding: 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  transition: background-color 0.2s, transform 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  margin-bottom: 12px;
+}
+
+.history-item:active {
+  transform: scale(0.98);
+  background-color: var(--color-surface-hover);
+}
+
+.history-preview-mini {
+  width: 52px;
+  height: 52px;
+  background: #ffffff !important; /* Force white background for QR visibility */
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.history-preview-mini svg,
+.history-preview-mini img {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+  object-fit: contain; /* Ensure QR doesn't stretch and fits within the box */
+}
+
+.history-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.history-item-date {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin-bottom: 2px;
+}
+
+.history-item-data {
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 15px;
+  color: var(--color-text);
+}
+
+.history-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.history-action-btn {
+  padding: 6px 14px;
+  font-size: 13px;
+  border-radius: 10px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  border: none;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.history-action-btn:hover {
+  background: var(--color-text);
+  color: var(--color-bg);
+}
+
+.history-item-delete {
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 8px;
+  margin-left: auto;
+  transition: color 0.2s, opacity 0.2s;
+}
+
+.history-item-delete:hover {
+  color: var(--color-accent-red);
+  opacity: 1;
+}
+
+/* --- カラーピッカー（色選択ボックス） --- */
+/* 色のプレビュー（丸）と16進数（HEX）入力欄を囲む大きな外枠 */
+.color-picker-wrap {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  /* 色プレビューと文字入力欄の間の隙間 */
+  background: var(--color-surface);
+  /* ボックスの背景色（他の入力欄と統一しています） */
+  padding: 8px 16px;
+  /* ボックス内の余白（通常の入力欄の高さを揃えるため、上下は8pxと少し狭くしています） */
+  border-radius: 12px;
+  /* ボックスの角丸 */
+  border: 1px solid var(--color-border);
+  /* 枠線 */
+  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.color-picker-wrap:focus-within {
+  /* パソコンなどで、カラーコード入力時にフォーカスされた場合の色の変化 */
+  border-color: var(--color-primary);
+  background: var(--color-surface-hover);
+}
+
+/* 丸い色プレビューのスタイル */
+.color-picker-wrap input[type="color"] {
+  width: 32px;
+  /* 色プレビューの横幅 */
+  height: 32px;
+  /* 色プレビューの縦幅 */
+  border: none;
+  cursor: pointer;
+  border-radius: 50%;
+  /* 50%にすると完全な円になります。10pxなどに変えると角丸四角になります */
+  background: transparent;
+  transition: transform 0.3s;
+  flex-shrink: 0;
+}
+
+.color-picker-wrap input[type="text"] {
+  border: none;
+  background: transparent;
+  padding: 0;
+  width: 100%;
+  border-radius: 0;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: inherit;
+  color: var(--color-text);
+}
+
+.color-picker-wrap input[type="text"]:focus {
+  border: none;
+  background: transparent;
+  transform: none;
+  outline: none;
+}
+
+.color-picker-wrap input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.color-picker-wrap input[type="color"]::-webkit-color-swatch {
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+}
+
+.color-picker-wrap input[type="color"]:hover {
+  transform: scale(1.1);
+}
+
+/* Accessibility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* Grid Layout Adjustments */
+.grid-layout {
+  display: flex;
+  gap: 24px;
+  flex-direction: column;
+}
+
+@media (min-width: 768px) {
+  .grid-layout {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .config-col {
+    flex: 1.2;
+  }
+
+  .preview-col {
+    flex: 1.0;
+  }
+}
+
+.grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* Dynamic Alert: iOS Aesthetic */
+.alert {
+  margin-top: 24px;
+  padding: 16px;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  transition: all 0.3s var(--spring-smooth);
+  animation: slideDown 0.5s var(--spring-smooth);
+}
+
+@keyframes slideDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* アラート内のチェックアイコン等のアイコン調整用 */
+.alert .svg-inline--fa {
+  /* サイズ変更: 1.2emなどにすると大きくなります */
+  font-size: 1.1rem;
+
+  /* 位置の微調整: 確実に上下に動かしたい場合は relative と top を使用 */
+  position: relative;
+  top: 2px;
+  /* 1px で下へ、-1px で上へ移動 */
+  left: 0px;
+
+  /* アイコン自体の余白調整 */
+  margin: 0;
+  flex-shrink: 0;
+  /* アイコンが潰れないように固定 */
+}
+
+.alert.safe {
+  background-color: var(--color-success);
+  color: #ffffff;
+}
+
+.alert.warning {
+  background-color: var(--color-warning);
+  color: #000000;
+}
+
+.alert.danger {
+  background-color: var(--color-danger);
+  color: #ffffff;
+}
+
+.page-icon {
+  font-size: 2rem;
+  color: var(--color-text);
+  margin-right: 12px;
+}
+
+/* Flex Utility */
+.flex-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.flex-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}

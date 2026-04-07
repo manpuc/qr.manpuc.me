@@ -1,0 +1,60 @@
+---
+import { icon } from '@fortawesome/fontawesome-svg-core';
+import { 
+  faDownload, faCopy, faTrash, faGear, 
+  faShareNodes, faLanguage, faClockRotateLeft, 
+  faWandMagicSparkles, faPalette, faSun, faMoon, faCheck, faInfoCircle, faExclamationTriangle,
+  faRotateRight
+} from '@fortawesome/free-solid-svg-icons';
+
+const icons = {
+  download: faDownload,
+  copy: faCopy,
+  trash: faTrash,
+  gear: faGear,
+  share: faShareNodes,
+  language: faLanguage,
+  history: faClockRotateLeft,
+  magic: faWandMagicSparkles,
+  palette: faPalette,
+  sun: faSun,
+  moon: faMoon,
+  check: faCheck,
+  info: faInfoCircle,
+  warning: faExclamationTriangle,
+  rotate: faRotateRight
+};
+
+interface Props {
+  name: keyof typeof icons;
+  class?: string;
+  id?: string;
+  'aria-label'?: string;
+  'aria-hidden'?: boolean | "true" | "false";
+}
+
+const { name, class: className = '', id, 'aria-label': ariaLabel, 'aria-hidden': ariaHidden } = Astro.props;
+const iconDef = icons[name as keyof typeof icons];
+const iconHtml = iconDef ? icon(iconDef).html[0] : '';
+---
+<span 
+  class={`inline-icon ${className}`} 
+  id={id} 
+  aria-label={ariaLabel} 
+  aria-hidden={ariaHidden === undefined && !ariaLabel ? "true" : ariaHidden}
+  set:html={iconHtml} 
+/>
+
+<style>
+  .inline-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .inline-icon :global(svg) {
+    width: 1em;
+    height: 1em;
+    vertical-align: -0.125em;
+    fill: currentColor;
+  }
+</style>
