@@ -15,7 +15,7 @@ const { lang, title, description } = Astro.props;
 <html lang={lang} data-theme="auto">
   <head>
     <SEO title={title} description={description} lang={lang} />
-    
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -35,7 +35,7 @@ const { lang, title, description } = Astro.props;
   </head>
   <body>
     <slot />
-    
+
     <script>
       // Load PWA virtual module
       try {

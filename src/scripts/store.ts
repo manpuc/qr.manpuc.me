@@ -65,21 +65,22 @@ class Store {
         this.state.theme = savedTheme;
       }
 
-      const savedLang = localStorage.getItem('qr_maker_lang') as 'ja' | 'en';
+      // 言語判定の優先順位: 1. URLパス (/en/), 2. html要素の lang 属性
       if (typeof window !== 'undefined') {
         const isEnPath = window.location.pathname.startsWith('/en');
-        if (isEnPath) {
+        const htmlLang = document.documentElement.lang;
+
+        if (isEnPath || htmlLang === 'en') {
           this.state.language = 'en';
-        } else if (savedLang) {
-          this.state.language = savedLang;
         } else {
-          const isJa = navigator.language.startsWith('ja');
-          this.state.language = isJa ? 'ja' : 'en';
+          this.state.language = 'ja';
         }
       }
     } catch (e) {
       console.error('Failed to load state', e);
     }
+    // 初期状態をUIに反映
+    this.notify();
   }
 
   save() {

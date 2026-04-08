@@ -256,8 +256,9 @@ function bindEvents() {
 
   // Action Buttons
   el.btnLang.addEventListener('click', () => {
-    const nextLang = store.state.language === 'ja' ? 'en' : 'ja';
-    const nextPath = nextLang === 'en' ? '/en/' : '/';
+    // 現在のパスが /en/ かどうかで次の言語パスを決定
+    const isEnPath = window.location.pathname.startsWith('/en');
+    const nextPath = isEnPath ? '/' : '/en/';
     window.location.href = nextPath;
   });
 

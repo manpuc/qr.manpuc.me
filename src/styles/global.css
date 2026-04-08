@@ -164,19 +164,24 @@ button:active {
 /* --- アイコンボタン (右上メニューなど) --- */
 /* 言語切り替えやテーマ変更の四角いアイコン専用ボタン */
 button.icon-btn {
-  color: var(--color-text); /* アイコンの色 */
-  border: 1px solid var(--color-border); /* ボタンの枠線 */
+  color: var(--color-text);
+  /* アイコンの色 */
+  border: 1px solid var(--color-border);
+  /* ボタンの枠線 */
   padding: 0;
-  width: 44px; /* ボタンの幅（iOS標準の最小タップ領域） */
-  height: 44px; /* ボタンの高さ */
+  width: 44px;
+  /* ボタンの幅（iOS標準の最小タップ領域） */
+  height: 44px;
+  /* ボタンの高さ */
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 12px; /* 四角いボタンの角丸 */
+  border-radius: 12px;
+  /* 四角いボタンの角丸 */
   flex-shrink: 0;
-  
+
   /* ガラスのようなボカシ効果を強調（不透明度を下げて背後をより見えやすく） */
-  background: var(--color-surface); 
+  background: var(--color-surface);
   backdrop-filter: blur(25px) saturate(190%);
   -webkit-backdrop-filter: blur(25px) saturate(190%);
   transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
@@ -393,10 +398,11 @@ input[type="number"]:focus {
   width: 256px;
   height: 256px;
   position: relative;
-  overflow: hidden; /* Prevent spill */
+  overflow: hidden;
+  /* Prevent spill */
 }
 
-.qr-preview-wrapper > * {
+.qr-preview-wrapper>* {
   border-radius: 4px;
   box-shadow: var(--shadow-md);
   animation: popIn 0.8s var(--spring-bounce);
@@ -471,7 +477,8 @@ input[type="number"]:focus {
 .history-preview-mini {
   width: 52px;
   height: 52px;
-  background: #ffffff !important; /* Force white background for QR visibility */
+  background: #ffffff !important;
+  /* Force white background for QR visibility */
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -487,7 +494,8 @@ input[type="number"]:focus {
   width: 100% !important;
   height: 100% !important;
   display: block;
-  object-fit: contain; /* Ensure QR doesn't stretch and fits within the box */
+  object-fit: contain;
+  /* Ensure QR doesn't stretch and fits within the box */
 }
 
 .history-item-content {

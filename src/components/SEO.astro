@@ -5,49 +5,67 @@ interface Props {
   lang: string;
 }
 
-const { 
+const {
   lang,
-  title = lang === 'ja' ? 'QRメーカー | 絵文字入り・角丸デザインQR生成' : 'QR Maker | Design Custom QR with Emojis',
-  description = lang === 'ja' 
-    ? '登録不要・無料で高機能なQRコードが作れます。絵文字の配置、角丸、色のカスタマイズに対応。オフラインでも動作し、SVG/PNG保存が可能です。' 
-    : 'Generate high-quality custom QR codes for free. Supports emojis, rounded corners, and custom colors. Works offline with SVG/PNG export.',
+  title = lang === "ja"
+    ? "QRメーカー | 絵文字入り・角丸デザインQR生成"
+    : "QR Maker | Design Custom QR with Emojis",
+  description = lang === "ja"
+    ? "登録不要・無料で高機能なQRコードが作れます。絵文字の配置、角丸、色のカスタマイズに対応。オフラインでも動作し、SVG/PNG保存が可能です。"
+    : "Generate high-quality custom QR codes for free. Supports emojis, rounded corners, and custom colors. Works offline with SVG/PNG export.",
 } = Astro.props;
 
-const url = 'https://qr.manpuc.me';
-const canonicalURL = new URL(Astro.url.pathname, url).href;
-const ogImage = new URL('/app.png', url).href;
+const siteUrl = "https://qr.manpuc.me";
+const canonicalURL = new URL(Astro.url.pathname.replace(/\/$/, ""), siteUrl)
+  .href;
+const ogImage = new URL("/app.png", siteUrl).href;
+
+// 多言語パスの定義
+const alternateLinks = [
+  { rel: "alternate", hreflang: "ja", href: siteUrl + "/" },
+  { rel: "alternate", hreflang: "en", href: siteUrl + "/en/" },
+  { rel: "alternate", hreflang: "x-default", href: siteUrl + "/" },
+];
 
 // JSON-LD data
 const softwareData = {
   "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  "name": title,
-  "description": description,
-  "operatingSystem": "All",
-  "applicationCategory": "DesignApplication",
-  "offers": {
-    "@type": "Offer",
-    "price": "0",
-    "priceCurrency": "JPY"
+  "@type": ["SoftwareApplication", "WebApplication"],
+  name: title,
+  description: description,
+  operatingSystem: "All",
+  applicationCategory: "DesignApplication",
+  browserRequirements: "requires HTML5 support",
+  url: siteUrl,
+  author: {
+    "@type": "Person",
+    name: "manpuc",
+    url: "https://manpuc.me",
   },
-  "aggregateRating": {
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "JPY",
+  },
+  aggregateRating: {
     "@type": "AggregateRating",
-    "ratingValue": "5",
-    "ratingCount": "1"
-  }
+    ratingValue: "5",
+    ratingCount: "1",
+    bestRating: "5",
+  },
 };
 
 const breadcrumbData = {
   "@context": "https://schema.org",
   "@type": "BreadcrumbList",
-  "itemListElement": [
+  itemListElement: [
     {
       "@type": "ListItem",
-      "position": 1,
-      "name": lang === 'ja' ? "ホーム" : "Home",
-      "item": url
-    }
-  ]
+      position: 1,
+      name: lang === "ja" ? "ホーム" : "Home",
+      item: siteUrl,
+    },
+  ],
 };
 ---
 
@@ -60,8 +78,13 @@ const breadcrumbData = {
 <meta name="theme-color" content="#ffffff" />
 <meta name="generator" content={Astro.generator} />
 
-<!-- Canonical URL -->
+<!-- Canonical & hreflang -->
 <link rel="canonical" href={canonicalURL} />
+{
+  alternateLinks.map((link) => (
+    <link rel={link.rel} hreflang={link.hreflang} href={link.href} />
+  ))
+}
 
 <!-- Primary Meta Tags -->
 <title>{title}</title>
@@ -70,18 +93,26 @@ const breadcrumbData = {
 
 <!-- Open Graph / Facebook -->
 <meta property="og:type" content="website" />
-<meta property="og:url" content={Astro.url} />
+<meta property="og:url" content={canonicalURL} />
 <meta property="og:title" content={title} />
 <meta property="og:description" content={description} />
 <meta property="og:image" content={ogImage} />
 
 <!-- Twitter -->
 <meta property="twitter:card" content="summary_large_image" />
-<meta property="twitter:url" content={Astro.url} />
+<meta property="twitter:url" content={canonicalURL} />
 <meta property="twitter:title" content={title} />
 <meta property="twitter:description" content={description} />
 <meta property="twitter:image" content={ogImage} />
 
 <!-- Structured Data -->
-<script type="application/ld+json" is:inline set:html={JSON.stringify(softwareData)} />
-<script type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbData)} />
+<script
+  type="application/ld+json"
+  is:inline
+  set:html={JSON.stringify(softwareData)}
+/>
+<script
+  type="application/ld+json"
+  is:inline
+  set:html={JSON.stringify(breadcrumbData)}
+/>

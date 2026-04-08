@@ -34,6 +34,20 @@ export const dictionaries = {
     themeAuto: '自動 (OSに従う)',
     loadHistory: '再利用',
     qrRadiusLabel: 'QR全体の角丸',
+    emojiSizeLabel: 'サイズ (Max 50%)',
+    emojiFontLabel: 'フォント',
+    emojiWeightLabel: '太さ',
+    emojiHueLabel: '色相 (Hue)',
+    emojiWarning: '⚠ 絵文字以外が入力されています。画像化方式では1文字の絵文字のみ推奨されます。',
+    aboutTitle: 'QRメーカーについて',
+    aboutText: 'QRメーカーは、デザイン性に優れたQRコードをブラウザ上で簡単に作成できる無料ツールです。登録不要で、作成したデータがサーバーに送信されることはありません。完全にプライバシーに配慮したオフライン対応の設計となっています。',
+    featuresTitle: '主な特徴',
+    featureEmoji: '絵文字埋め込み: QRコードの中央にお好みの絵文字を配置できます。',
+    featureDesign: '自由なデザイン: ドットの形状（四角、丸、角丸）や色を自由に変更可能。',
+    featureExport: '高品質書き出し: PNG形式だけでなく、拡大してもボケないSVG形式に対応。',
+    featurePrivacy: 'プライバシー保護: データの入出力はすべてお使いのデバイス上で行われます。',
+    tipsTitle: '作成のヒント',
+    tipsText: 'QRコードの読み取り精度を保つため、前景色と背景色のコントラストを十分に確保することをお勧めします。本ツールには自動読み取りチェック機能が搭載されており、デザインが読み取りにくい場合は警告が表示されます。',
   },
   en: {
     appTitle: 'QR Maker',
@@ -68,6 +82,20 @@ export const dictionaries = {
     themeAuto: 'Auto (OS Default)',
     loadHistory: 'Reuse',
     qrRadiusLabel: 'QR Background Radius',
+    emojiSizeLabel: 'Size (Max 50%)',
+    emojiFontLabel: 'Font',
+    emojiWeightLabel: 'Weight',
+    emojiHueLabel: 'Hue',
+    emojiWarning: '⚠ Non-emoji characters detected. Only single emoji is recommended for Image mode.',
+    aboutTitle: 'About QR Maker',
+    aboutText: 'QR Maker is a free web tool that allows you to easily create stylish QR codes directly in your browser. No registration is required, and your data is never sent to a server. It is a privacy-first, offline-capable application.',
+    featuresTitle: 'Key Features',
+    featureEmoji: 'Emoji Integration: Place your favorite emoji in the center of the QR code.',
+    featureDesign: 'Custom Design: Change dot styles (square, dots, rounded) and colors freely.',
+    featureExport: 'High-Quality Export: Supports both PNG and scalable SVG formats.',
+    featurePrivacy: 'Privacy First: All processing happens locally on your device.',
+    tipsTitle: 'Pro Tips',
+    tipsText: 'To ensure readability, maintain high contrast between the foreground and background colors. This tool includes a real-time readability checker to warn you if your design might be hard to scan.',
   }
 };
 
@@ -106,5 +134,4 @@ export function updateDOMTranslations() {
 // Subscribe to language changes
 store.subscribe(() => {
   updateDOMTranslations();
-  document.documentElement.lang = store.state.language;
 });
