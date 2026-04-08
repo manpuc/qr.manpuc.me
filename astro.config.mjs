@@ -7,6 +7,13 @@ import sitemap from '@astrojs/sitemap';
 export default defineConfig({
   site: 'https://qr.manpuc.me',
   output: 'static',
+  i18n: {
+    defaultLocale: 'ja',
+    locales: ['ja', 'en'],
+    routing: {
+      prefixDefaultLocale: false
+    }
+  },
   integrations: [
     sitemap(),
     astroPwa({

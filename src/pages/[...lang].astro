@@ -1,0 +1,489 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Icon from "../components/Icon.astro";
+
+export function getStaticPaths() {
+  return [
+    { params: { lang: undefined } }, // Root (ja)
+    { params: { lang: "en" } },     // English
+  ];
+}
+
+const { lang: langParam } = Astro.params;
+const lang = langParam || "ja";
+
+// SEO Metadata (Can be further customized per language if needed)
+const title = lang === 'ja' 
+  ? 'QRメーカー | 絵文字入り・角丸デザインQRコードを無料生成' 
+  : 'QR Maker | Generate Custom Design QR Codes with Emojis for Free';
+
+const description = lang === 'ja'
+  ? '登録不要・無料で高機能なQRコードが作れます。絵文字の配置、角丸、色のカスタマイズ、背景透過に対応。オフラインでも動作し、SVG/PNG保存が可能です。'
+  : 'Create high-quality custom QR codes with emojis, rounded corners, and custom colors. No registration required. Works offline with SVG/PNG support.';
+---
+
+<Layout title={title} description={description} lang={lang}>
+  <div class="top-controls">
+    <button
+      id="btn-lang"
+      class="icon-btn"
+      aria-label="Toggle Language"
+      title="Change Language"><Icon name="language" /></button
+    >
+    <button
+      id="btn-theme"
+      class="icon-btn"
+      aria-label="Toggle Theme"
+      title="Switch Theme"
+    >
+      <Icon name="sun" class="theme-sun" />
+      <Icon name="moon" class="theme-moon" />
+    </button>
+  </div>
+
+  <div class="container">
+    <header class="app-header">
+      <img src="/favicon.svg" class="page-icon" alt="" />
+      <h1 class="app-title" data-i18n="appTitle">
+        {lang === 'ja' ? 'QRメーカー' : 'QR Maker'}
+      </h1>
+    </header>
+
+    <main class="grid-layout">
+      <div class="config-col">
+        <div class="card">
+          <h2 data-i18n="settingsTitle"><Icon name="gear" /> {lang === 'ja' ? 'デザイン設定' : 'Design Settings'}</h2>
+
+          <div class="form-group">
+            <label for="input-data" data-i18n="dataLabel"
+              >{lang === 'ja' ? 'データ (URLやテキスト)' : 'Data (URL or Text)'}</label
+            >
+            <input
+              type="text"
+              id="input-data"
+              data-i18n-placeholder="dataLabel"
+            />
+            <div
+              id="text-warning"
+              class="hidden"
+              style="color: var(--color-warning); font-size: 0.8rem; margin-top: 4px; font-weight: 700;"
+            >
+              ⚠ {lang === 'ja' ? '日本語などマルチバイト文字は機種によっては文字化けする可能性があります。' : 'Multi-byte characters like Japanese might cause garbled text on some devices.'}
+            </div>
+          </div>
+
+          <div class="grid-2col">
+            <div class="form-group">
+              <label for="input-size" data-i18n="sizeLabel"
+                >{lang === 'ja' ? '出力サイズ (px)' : 'Output Size (px)'}</label
+              >
+              <select id="input-size">
+                <option value="128">128</option>
+                <option value="256" selected>256</option>
+                <option value="512">512</option>
+                <option value="1024">1024</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="input-ec" data-i18n="errorCorrectionLabel"
+                >{lang === 'ja' ? '誤り訂正' : 'Error Correction'}</label
+              >
+              <select id="input-ec">
+                <option value="L">L (7%)</option>
+                <option value="M" selected>M (15%)</option>
+                <option value="Q">Q (25%)</option>
+                <option value="H">H (30%)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid-2col">
+            <div class="form-group">
+              <label for="input-style" data-i18n="styleLabel"
+                >{lang === 'ja' ? 'ドットスタイル' : 'Dot Style'}</label
+              >
+              <select id="input-style">
+                <option value="square" data-i18n="styleSquare">{lang === 'ja' ? '四角' : 'Square'}</option>
+                <option value="dots" data-i18n="styleDots">{lang === 'ja' ? '丸' : 'Dots'}</option>
+                <option value="rounded" selected data-i18n="styleRounded"
+                  >{lang === 'ja' ? '角丸' : 'Rounded'}</option
+                >
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="input-margin" data-i18n="marginLabel"
+                >{lang === 'ja' ? '余白枠 (px)' : 'Margin (px)'}</label
+              >
+              <input
+                type="number"
+                id="input-margin"
+                value="10"
+                min="0"
+                max="100"
+              />
+            </div>
+          </div>
+
+          <div class="grid-2col">
+            <div class="form-group">
+              <label for="input-fg" data-i18n="fgColorLabel">{lang === 'ja' ? '前景色' : 'Foreground'}</label>
+              <div class="color-picker-wrap">
+                <input type="color" id="input-fg" value="#000000" />
+                <input
+                  type="text"
+                  id="input-fg-text"
+                  value="#000000"
+                  style="width:100%;"
+                  data-i18n-aria-label="fgColorLabel"
+                />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="input-bg" data-i18n="bgColorLabel">{lang === 'ja' ? '背景色' : 'Background'}</label>
+              <div class="color-picker-wrap">
+                <input type="color" id="input-bg" value="#ffffff" />
+                <input
+                  type="text"
+                  id="input-bg-text"
+                  value="#ffffff"
+                  style="width:100%;"
+                  data-i18n-aria-label="bgColorLabel"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="input-qr-radius" data-i18n="qrRadiusLabel"
+              >{lang === 'ja' ? 'QR全体の角丸' : 'QR Corner Radius'}</label
+            >
+            <input
+              type="number"
+              id="input-qr-radius"
+              min="0"
+              max="100"
+              step="1"
+              value="12"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="toggle-label">
+              <input type="checkbox" id="input-transparent" />
+              <span data-i18n="transparentBgLabel"
+                >{lang === 'ja' ? '背景を透過する (PNG保存用)' : 'Transparent Background (for PNG)'}</span
+              >
+            </label>
+          </div>
+
+          <hr
+            style="margin: 20px 0; border: 0; border-top: 1px solid var(--color-border);"
+          />
+
+          <div class="form-group">
+            <label for="input-emoji-mode" data-i18n="emojiModeLabel"
+              >{lang === 'ja' ? '中央絵文字 (Noto)' : 'Center Emoji (Noto)'}</label
+            >
+            <select id="input-emoji-mode">
+              <option value="none" data-i18n="emojiNone">{lang === 'ja' ? 'なし' : 'None'}</option>
+              <option value="text" data-i18n="emojiText"
+                >{lang === 'ja' ? 'テキスト描画方式' : 'Text Render Mode'}</option
+              >
+              <option value="image" data-i18n="emojiImage">{lang === 'ja' ? '画像化方式' : 'Image Render Mode'}</option>
+            </select>
+          </div>
+
+          <div class="form-group hidden" id="emoji-input-wrap">
+            <label for="input-emoji" data-i18n="emojiInputLabel"
+              >{lang === 'ja' ? 'テキスト/絵文字入力' : 'Input Emoji/Text'}</label
+            >
+            <input type="text" id="input-emoji" placeholder="🌟" value="🌟" />
+            <div
+              id="emoji-warning"
+              class="hidden"
+              style="color: var(--color-warning); font-size: 0.8rem; margin-top: 4px; font-weight: 700;"
+            >
+              ⚠ {lang === 'ja' ? '絵文字以外が入力されています。画像化方式では1文字の絵文字のみ推奨されます。' : 'Non-emoji characters detected. Only single emoji is recommended for Image mode.'}
+            </div>
+          </div>
+
+          <!-- Controls omitted for brevity in preview, kept in full content... -->
+          <div id="emoji-common-controls" class="hidden" style="margin-bottom: 12px;">
+             <!-- ... same as index.astro ... -->
+             <div class="form-group" style="margin-bottom: 12px;" id="emoji-size-wrap">
+                <label for="input-emoji-size">サイズ (Max 50%)</label>
+                <div class="flex-row">
+                  <input type="range" id="input-emoji-size" min="10" max="50" value="40" style="flex: 1;" />
+                  <span id="val-emoji-size" style="min-width: 3em; font-variant-numeric: tabular-nums;">40%</span>
+                </div>
+              </div>
+              <div class="form-group hidden" id="emoji-hue-wrap" style="margin-bottom: 12px;">
+                <label for="input-emoji-hue">色相 (Hue)</label>
+                <div class="flex-row">
+                  <input type="range" id="input-emoji-hue" min="0" max="360" value="0" style="flex: 1;" />
+                  <span id="val-emoji-hue" style="min-width: 3em; font-variant-numeric: tabular-nums;">0</span>
+                </div>
+              </div>
+          </div>
+          <div id="emoji-text-controls" class="hidden">
+              <div class="form-group" id="emoji-font-wrap" style="margin-bottom: 12px;">
+                <label for="input-emoji-font">フォント</label>
+                <select id="input-emoji-font" style="width: 100%;">
+                  <option value="sans-serif">ゴシック (sans-serif)</option>
+                  <option value="serif">明朝 (serif)</option>
+                  <option value="monospace">等幅 (monospace)</option>
+                  <option value="'Zen Maru Gothic', sans-serif">Zen Maru</option>
+                </select>
+              </div>
+              <div class="form-group" id="emoji-weight-wrap" style="margin-bottom: 12px;">
+                <label for="input-emoji-weight">太さ</label>
+                <div class="flex-row">
+                  <input type="range" id="input-emoji-weight" min="100" max="900" step="100" value="700" style="flex: 1;" />
+                  <span id="val-emoji-weight" style="min-width: 3em; font-variant-numeric: tabular-nums;">700</span>
+                </div>
+              </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="preview-col">
+        <div
+          class="card"
+          style="text-align: center; position: sticky; top: 20px;"
+        >
+          <h2 data-i18n="previewTitle"><Icon name="magic" /> {lang === 'ja' ? 'プレビュー' : 'Preview'}</h2>
+          <div
+            id="qr-preview"
+            class="qr-preview-wrapper"
+            style="min-height: 256px;"
+          >
+            <div
+              class="qr-placeholder"
+              style="width: 256px; height: 256px; opacity: 0.1; background: currentColor; border-radius: 12px; display: flex; align-items: center; justify-content: center;"
+            >
+              <img src="/favicon.svg" class="placeholder-icon" alt="" />
+            </div>
+          </div>
+
+          <div id="readability-alert" class="alert hidden">
+            <Icon name="check" id="alert-icon" />
+            <span id="alert-text"></span>
+          </div>
+
+          <div class="flex-col" style="margin-top: 20px;">
+            <button id="btn-dl-png"
+              ><Icon name="download" />
+              <span data-i18n="downloadPng">{lang === 'ja' ? 'PNG 保存' : 'Save PNG'}</span></button
+            >
+            <button id="btn-dl-svg" class="outline"
+              ><Icon name="download" />
+              <span data-i18n="downloadSvg">{lang === 'ja' ? 'SVG 保存' : 'Save SVG'}</span></button
+            >
+            <button id="btn-share" class="outline"
+              ><Icon name="share" />
+              <span data-i18n="shareLabel">{lang === 'ja' ? '共有 URL' : 'Share URL'}</span></button
+            >
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <section
+      class="card hidden"
+      id="history-section"
+      style="margin-top:20px;"
+    >
+      <h2 data-i18n="historyTitle"><Icon name="history" /> {lang === 'ja' ? '履歴' : 'History'}</h2>
+      <div id="history-list" class="history-grid"></div>
+    </section>
+
+    <!-- SEO Content Section -->
+    <section class="card content-section" style="margin-top: 40px;">
+      {lang === 'ja' ? (
+        <>
+          <h2>QRメーカーについて</h2>
+          <p>QRメーカーは、デザイン性に優れたQRコードをブラウザ上で簡単に作成できる無料ツールです。登録不要で、作成したデータがサーバーに送信されることはありません。完全にプライバシーに配慮したオフライン対応の設計となっています。</p>
+          
+          <div class="content-grid">
+            <div class="content-item">
+              <h3>主な特徴</h3>
+              <ul>
+                <li><strong>絵文字埋め込み:</strong> QRコードの中央にお好みの絵文字を配置できます。</li>
+                <li><strong>自由なデザイン:</strong> ドットの形状（四角、丸、角丸）や色を自由に変更可能。</li>
+                <li><strong>高品質書き出し:</strong> PNG形式だけでなく、拡大してもボケないSVG形式に対応。</li>
+                <li><strong>プライバシー保護:</strong> データの入出力はすべてお使いのデバイス上で行われます。</li>
+              </ul>
+            </div>
+            <div class="content-item">
+              <h3>作成のヒント</h3>
+              <p>QRコードの読み取り精度を保つため、前景色と背景色のコントラストを十分に確保することをお勧めします。本ツールには自動読み取りチェック機能が搭載されており、デザインが読み取りにくい場合は警告が表示されます。</p>
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          <h2>About QR Maker</h2>
+          <p>QR Maker is a free web tool that allows you to easily create stylish QR codes directly in your browser. No registration is required, and your data is never sent to a server. It is a privacy-first, offline-capable application.</p>
+          
+          <div class="content-grid">
+            <div class="content-item">
+              <h3>Key Features</h3>
+              <ul>
+                <li><strong>Emoji Integration:</strong> Place your favorite emoji in the center of the QR code.</li>
+                <li><strong>Custom Design:</strong> Change dot styles (square, dots, rounded) and colors freely.</li>
+                <li><strong>High-Quality Export:</strong> Supports both PNG and scalable SVG formats.</li>
+                <li><strong>Privacy First:</strong> All processing happens locally on your device.</li>
+              </ul>
+            </div>
+            <div class="content-item">
+              <h3>Pro Tips</h3>
+              <p>To ensure readability, maintain high contrast between the foreground and background colors. This tool includes a real-time readability checker to warn you if your design might be hard to scan.</p>
+            </div>
+          </div>
+        </>
+      )}
+    </section>
+
+    <div style="text-align: center; margin-top: 40px; margin-bottom: 20px;">
+      <a
+        href="https://manpuc.me"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="branded-footer-link"
+      >
+        Developed with ❤️ by manpuc
+      </a>
+    </div>
+  </div>
+
+  <script src="../scripts/main.ts"></script>
+</Layout>
+
+<style>
+  /* Reuse styles from index.astro */
+  .app-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .branded-footer-link {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    opacity: 0.5;
+    transition: opacity 0.3s ease, color 0.3s ease, transform 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .branded-footer-link:hover {
+    opacity: 1;
+    color: var(--color-text);
+    transform: scale(1.03);
+  }
+  .page-icon {
+    width: 2.4rem;
+    height: 2.4rem;
+    flex-shrink: 0;
+  }
+  .app-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .grid-layout {
+    display: flex;
+    gap: 24px;
+    flex-direction: column;
+  }
+  @media (min-width: 768px) {
+    .grid-layout {
+      flex-direction: row;
+      align-items: flex-start;
+    }
+    .config-col { flex: 1.2; }
+    .preview-col { flex: 1; }
+  }
+  .grid-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .alert {
+    margin-top: 24px;
+    padding: 20px;
+    border-radius: var(--radius-md);
+    font-size: 0.95rem;
+    font-weight: 700;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    text-align: left;
+    transition: all var(--transition-bounce);
+    animation: slideDown 0.6s var(--spring-bounce);
+  }
+  @keyframes slideDown {
+    0% { opacity: 0; transform: translateY(-20px) scale(0.95); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .alert.safe { background-color: var(--color-success); color: #ffffff; }
+  .alert.warning { background-color: var(--color-warning); color: #000000; }
+  .alert.danger { background-color: var(--color-danger); color: #ffffff; }
+
+  .history-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-top: 20px;
+  }
+  @media (min-width: 600px) {
+    .history-grid {
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    }
+  }
+
+  /* Content Section Styles */
+  .content-section h2 {
+    font-size: 1.5rem;
+    margin-bottom: 16px;
+    color: var(--color-text);
+  }
+  .content-section p {
+    line-height: 1.6;
+    color: var(--color-text-muted);
+    margin-bottom: 24px;
+  }
+  .content-grid {
+    display: grid;
+    gap: 24px;
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 768px) {
+    .content-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .content-item h3 {
+    font-size: 1.1rem;
+    margin-bottom: 12px;
+    color: var(--color-text);
+  }
+  .content-item ul {
+    list-style: none;
+    padding: 0;
+  }
+  .content-item li {
+    margin-bottom: 8px;
+    padding-left: 20px;
+    position: relative;
+    color: var(--color-text-muted);
+  }
+  .content-item li::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: var(--color-accent);
+    font-weight: bold;
+  }
+</style>

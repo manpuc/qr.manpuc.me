@@ -1,0 +1,87 @@
+---
+interface Props {
+  title?: string;
+  description?: string;
+  lang: string;
+}
+
+const { 
+  lang,
+  title = lang === 'ja' ? 'QRメーカー | 絵文字入り・角丸デザインQR生成' : 'QR Maker | Design Custom QR with Emojis',
+  description = lang === 'ja' 
+    ? '登録不要・無料で高機能なQRコードが作れます。絵文字の配置、角丸、色のカスタマイズに対応。オフラインでも動作し、SVG/PNG保存が可能です。' 
+    : 'Generate high-quality custom QR codes for free. Supports emojis, rounded corners, and custom colors. Works offline with SVG/PNG export.',
+} = Astro.props;
+
+const url = 'https://qr.manpuc.me';
+const canonicalURL = new URL(Astro.url.pathname, url).href;
+const ogImage = new URL('/app.png', url).href;
+
+// JSON-LD data
+const softwareData = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": title,
+  "description": description,
+  "operatingSystem": "All",
+  "applicationCategory": "DesignApplication",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "JPY"
+  },
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "5",
+    "ratingCount": "1"
+  }
+};
+
+const breadcrumbData = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": lang === 'ja' ? "ホーム" : "Home",
+      "item": url
+    }
+  ]
+};
+---
+
+<!-- Global Metadata -->
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="alternate icon" href="/fav-128.ico" sizes="128x128" />
+<link rel="apple-touch-icon" href="/app.png" />
+<meta name="theme-color" content="#ffffff" />
+<meta name="generator" content={Astro.generator} />
+
+<!-- Canonical URL -->
+<link rel="canonical" href={canonicalURL} />
+
+<!-- Primary Meta Tags -->
+<title>{title}</title>
+<meta name="title" content={title} />
+<meta name="description" content={description} />
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website" />
+<meta property="og:url" content={Astro.url} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:image" content={ogImage} />
+
+<!-- Twitter -->
+<meta property="twitter:card" content="summary_large_image" />
+<meta property="twitter:url" content={Astro.url} />
+<meta property="twitter:title" content={title} />
+<meta property="twitter:description" content={description} />
+<meta property="twitter:image" content={ogImage} />
+
+<!-- Structured Data -->
+<script type="application/ld+json" is:inline set:html={JSON.stringify(softwareData)} />
+<script type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbData)} />

@@ -66,11 +66,16 @@ class Store {
       }
 
       const savedLang = localStorage.getItem('qr_maker_lang') as 'ja' | 'en';
-      if (savedLang) {
-        this.state.language = savedLang;
-      } else if (typeof navigator !== 'undefined') {
-        const isJa = navigator.language.startsWith('ja');
-        this.state.language = isJa ? 'ja' : 'en';
+      if (typeof window !== 'undefined') {
+        const isEnPath = window.location.pathname.startsWith('/en');
+        if (isEnPath) {
+          this.state.language = 'en';
+        } else if (savedLang) {
+          this.state.language = savedLang;
+        } else {
+          const isJa = navigator.language.startsWith('ja');
+          this.state.language = isJa ? 'ja' : 'en';
+        }
       }
     } catch (e) {
       console.error('Failed to load state', e);

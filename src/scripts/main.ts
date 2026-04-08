@@ -257,8 +257,8 @@ function bindEvents() {
   // Action Buttons
   el.btnLang.addEventListener('click', () => {
     const nextLang = store.state.language === 'ja' ? 'en' : 'ja';
-    store.update({ language: nextLang });
-    renderNow(); // to update alert translation if any
+    const nextPath = nextLang === 'en' ? '/en/' : '/';
+    window.location.href = nextPath;
   });
 
   el.btnTheme.addEventListener('click', () => {

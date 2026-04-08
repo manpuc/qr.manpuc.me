@@ -1,0 +1,54 @@
+---
+import SEO from "../components/SEO.astro";
+import "../styles/global.css";
+
+interface Props {
+  title?: string;
+  description?: string;
+  lang: string;
+}
+
+const { lang, title, description } = Astro.props;
+---
+
+<!doctype html>
+<html lang={lang} data-theme="auto">
+  <head>
+    <SEO title={title} description={description} lang={lang} />
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap"
+      rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
+    />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
+
+    <meta name="astro-view-transitions-enabled" content="false" />
+  </head>
+  <body>
+    <slot />
+    
+    <script>
+      // Load PWA virtual module
+      try {
+        // @ts-ignore
+        import("virtual:pwa-register").then(({ registerSW }) => {
+          registerSW({ immediate: true });
+        });
+      } catch (e) {}
+    </script>
+    <!-- Cloudflare Web Analytics -->
+    <script
+      async
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon='{"token": "d6c3a0039b4e4cb194e7ea83521c8174"}'></script>
+  </body>
+</html>
