@@ -9,13 +9,15 @@ export default defineConfig({
   output: 'static',
   i18n: {
     defaultLocale: 'ja',
-    locales: ['ja', 'en'],
+    locales: ['ja', 'en', 'zh', 'es'],
     routing: {
       prefixDefaultLocale: false
     }
   },
   integrations: [
-    sitemap(),
+    sitemap({
+      filter: (page) => !page.includes('/og-image'),
+    }),
     astroPwa({
       registerType: 'autoUpdate',
       includeAssets: ['fav-128.ico', 'favicon.svg'],

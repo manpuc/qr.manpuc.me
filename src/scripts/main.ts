@@ -34,6 +34,7 @@ const el = {
   preview: document.getElementById('qr-preview') as HTMLElement,
   alert: document.getElementById('readability-alert') as HTMLElement,
   alertText: document.getElementById('alert-text') as HTMLElement,
+  alertIcon: document.getElementById('alert-icon') as HTMLElement,
 
   btnTheme: document.getElementById('btn-theme') as HTMLButtonElement,
   btnLang: document.getElementById('btn-lang') as HTMLButtonElement,
@@ -87,13 +88,34 @@ async function renderNow() {
     state.transparentBg,
     state.dotStyle,
     state.emojiMode !== 'none',
-    state.errorCorrection
+    state.errorCorrection,
+    state.emojiSize,
+    state.margin
   );
 
   el.alert.className = `alert ${readability.level}`;
-  // Use translations
-  const msg = state.language === 'ja' ? readability.messageJa : readability.messageEn;
+
+  // Multi-language alert message selection
+  const msgMap: Record<string, string> = {
+    ja: readability.messageJa,
+    en: readability.messageEn,
+    zh: readability.messageZh,
+    es: readability.messageEs,
+  };
+  const msg = msgMap[state.language] || readability.messageEn;
   el.alertText.textContent = msg;
+
+  // Dynamic Lucide icon based on level
+  if (el.alertIcon) {
+    if (readability.level === 'safe') {
+      el.alertIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+    } else if (readability.level === 'warning') {
+      el.alertIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1.3.5 2.6 1.5 3.5.8.8 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>`;
+    } else {
+      el.alertIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>`;
+    }
+  }
+
   el.alert.classList.remove('hidden');
 
   // Update text warn based on main data payload
@@ -254,13 +276,22 @@ function bindEvents() {
     debounceRender();
   });
 
-  // Action Buttons
-  el.btnLang.addEventListener('click', () => {
-    // 現在のパスが /en/ かどうかで次の言語パスを決定
-    const isEnPath = window.location.pathname.startsWith('/en');
-    const nextPath = isEnPath ? '/' : '/en/';
-    window.location.href = nextPath;
-  });
+  const langDropdown = document.getElementById('lang-dropdown');
+  if (el.btnLang && langDropdown) {
+    el.btnLang.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isHidden = langDropdown.classList.contains('hidden');
+      langDropdown.classList.toggle('hidden');
+      el.btnLang.setAttribute('aria-expanded', String(isHidden));
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!langDropdown.contains(e.target as Node) && e.target !== el.btnLang) {
+        langDropdown.classList.add('hidden');
+        el.btnLang.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
 
   el.btnTheme.addEventListener('click', () => {
     const themes = ['light', 'dark', 'auto'] as const;
@@ -412,18 +443,12 @@ function renderHistory() {
         <div class="history-item-data">${displayData}</div>
         <div class="history-actions">
           <button class="history-action-btn load-btn" data-id="${item.id}" style="display: flex; align-items: center; gap: 6px;">
-            <svg width="14" height="14" viewBox="0 0 512 512" fill="currentColor" style="flex-shrink: 0;">
-              <path d="M448 96L272 96l-32 32H48c-26.5 0-48 21.5-48 48v288c0 26.5 21.5 48 48 48h416c26.5 0 48-21.5 48-48V144c0-26.5-21.5-48-48-48zm16 336c0 8.8-7.2 16-16 16H48c-8.8 0-16-7.2-16-16V176c0-8.8 7.2-16 16-16h416c8.8 0 16 7.2 16 16v256z" opacity="0"/>
-              <path d="M480 128h-112l-16-16h-144l-16 16h-112c-26.5 0-48 21.5-48 48v256c0 26.5 21.5 48 48 48h400c26.5 0 48-21.5 48-48v-256c0-26.5-21.5-48-48-48zm-16 304h-368V160h368v272zm-184-136c0 44.1-35.9 80-80 80s-80-35.9-80-80 35.9-80 80-80 80 35.9 80 80z" opacity="0"/>
-              <path d="M370.7 133.2C339.5 104 298.8 88 255.7 88c-77.4 0-144.6 46.5-174.4 112.9c-4.9 10.9 0 23.8 11.1 28.7c11 4.8 23.9-0.1 28.7-11.1C144.1 166.5 196 136 255.7 136c33 0 64.5 12.4 88.6 35l-40.3 40.3c-9.1 9.1-2.6 24.7 10.2 24.7H432c8.8 0 16-7.1 16-16V102.1c0-12.8-15.5-19.3-24.6-10.2l-52.7 51.3zM425.6 281.4c-11-4.8-23.9 0.1-28.7 11.1C367.9 345.5 316 376 256.3 376c-33 0-64.5-12.4-88.6-35l40.3-40.3c9.1-9.1 2.6-24.7-10.2-24.7H80c-8.8 0-16 7.1-16 16v117.9c0 12.8 15.5 19.3 24.6 10.2l52.7-51.3c31.2 29.2 71.9 45.2 115 45.2c77.4 0 144.6-46.5 174.4-112.9c4.9-10.9 0-23.8-11.1-28.7z"/>
-            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
             ${t('loadHistory') || 'Reuse'}
           </button>
           <div style="flex: 1"></div>
           <div class="history-item-delete" data-id="${item.id}" title="Delete">
-            <svg fill="currentColor" viewBox="0 0 448 512" width="16" height="16">
-              <path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z"/>
-            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
           </div>
         </div>
       </div>

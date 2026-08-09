@@ -96,19 +96,119 @@ export const dictionaries = {
     featurePrivacy: 'Privacy First: All processing happens locally on your device.',
     tipsTitle: 'Pro Tips',
     tipsText: 'To ensure readability, maintain high contrast between the foreground and background colors. This tool includes a real-time readability checker to warn you if your design might be hard to scan.',
+  },
+  zh: {
+    appTitle: 'QR 生成器',
+    dataLabel: '数据 (URL或文本)',
+    sizeLabel: '输出大小 (px)',
+    marginLabel: '边距 (px)',
+    errorCorrectionLabel: '容错级别',
+    styleLabel: '点样式',
+    styleSquare: '方形',
+    styleDots: '圆点',
+    styleRounded: '圆角',
+    fgColorLabel: '前景色',
+    bgColorLabel: '背景色',
+    transparentBgLabel: '透明背景 (PNG)',
+    emojiModeLabel: '中心表情 (Noto)',
+    emojiNone: '无',
+    emojiText: '文本渲染',
+    emojiImage: '图像渲染',
+    emojiInputLabel: '表情输入',
+    historyTitle: '历史记录',
+    downloadPng: '保存 PNG',
+    downloadSvg: '保存 SVG',
+    shareLabel: '分享链接',
+    deleteLabel: '删除',
+    copiedMsg: '链接已复制',
+    downloadTitle: '下载与分享',
+    settingsTitle: '设计设置',
+    previewTitle: '预览',
+    applyBtn: '应用并生成',
+    themeLight: '浅色模式',
+    themeDark: '深色模式',
+    themeAuto: '自动 (跟随系统)',
+    loadHistory: '重用',
+    qrRadiusLabel: 'QR背景圆角',
+    emojiSizeLabel: '大小 (最大 50%)',
+    emojiFontLabel: '字体',
+    emojiWeightLabel: '粗细',
+    emojiHueLabel: '色相',
+    emojiWarning: '⚠ 检测到非表情字符。图像模式仅推荐使用单个表情。',
+    aboutTitle: '关于 QR 生成器',
+    aboutText: 'QR 生成器是一款免费的在线工具，可让您直接在浏览器中轻松创建时尚的二维码。无需注册，您的数据不会发送到服务器。这是一款注重隐私、支持离线使用的应用。',
+    featuresTitle: '主要特点',
+    featureEmoji: '表情嵌入：将您喜欢的表情放置在二维码中心。',
+    featureDesign: '自定义设计：自由更改点样式（方形、圆点、圆角）和颜色。',
+    featureExport: '高质量导出：支持 PNG 和可缩放的 SVG 格式。',
+    featurePrivacy: '隐私优先：所有处理都在您的设备上本地完成。',
+    tipsTitle: '使用技巧',
+    tipsText: '为确保可读性，请保持前景色和背景色之间的高对比度。此工具包含实时可读性检查器，当您的设计可能难以扫描时会发出警告。',
+  },
+  es: {
+    appTitle: 'QR Maker',
+    dataLabel: 'Datos (URL o Texto)',
+    sizeLabel: 'Tamaño (px)',
+    marginLabel: 'Margen (px)',
+    errorCorrectionLabel: 'Corrección de errores',
+    styleLabel: 'Estilo de puntos',
+    styleSquare: 'Cuadrado',
+    styleDots: 'Puntos',
+    styleRounded: 'Redondeado',
+    fgColorLabel: 'Color de primer plano',
+    bgColorLabel: 'Color de fondo',
+    transparentBgLabel: 'Fondo transparente (PNG)',
+    emojiModeLabel: 'Emoji central (Noto)',
+    emojiNone: 'Ninguno',
+    emojiText: 'Renderizado de texto',
+    emojiImage: 'Renderizado de imagen',
+    emojiInputLabel: 'Entrada de emoji',
+    historyTitle: 'Historial',
+    downloadPng: 'Guardar PNG',
+    downloadSvg: 'Guardar SVG',
+    shareLabel: 'Compartir URL',
+    deleteLabel: 'Eliminar',
+    copiedMsg: 'URL copiada',
+    downloadTitle: 'Descargar y compartir',
+    settingsTitle: 'Configuración de diseño',
+    previewTitle: 'Vista previa',
+    applyBtn: 'Aplicar y generar',
+    themeLight: 'Modo claro',
+    themeDark: 'Modo oscuro',
+    themeAuto: 'Auto (predeterminado del SO)',
+    loadHistory: 'Reutilizar',
+    qrRadiusLabel: 'Radio de esquina QR',
+    emojiSizeLabel: 'Tamaño (Máx 50%)',
+    emojiFontLabel: 'Fuente',
+    emojiWeightLabel: 'Grosor',
+    emojiHueLabel: 'Tono',
+    emojiWarning: '⚠ Se detectaron caracteres no emoji. Solo se recomienda un emoji único en modo imagen.',
+    aboutTitle: 'Sobre QR Maker',
+    aboutText: 'QR Maker es una herramienta web gratuita que te permite crear fácilmente códigos QR elegantes directamente en tu navegador. No requiere registro y tus datos nunca se envían a un servidor. Es una aplicación que prioriza la privacidad y funciona sin conexión.',
+    featuresTitle: 'Características principales',
+    featureEmoji: 'Integración de emoji: Coloca tu emoji favorito en el centro del código QR.',
+    featureDesign: 'Diseño personalizado: Cambia estilos de puntos (cuadrado, puntos, redondeado) y colores libremente.',
+    featureExport: 'Exportación de alta calidad: Compatible con formatos PNG y SVG escalable.',
+    featurePrivacy: 'Privacidad primero: Todo el procesamiento se realiza localmente en tu dispositivo.',
+    tipsTitle: 'Consejos',
+    tipsText: 'Para garantizar la legibilidad, mantén un alto contraste entre los colores de primer plano y fondo. Esta herramienta incluye un verificador de legibilidad en tiempo real que te advertirá si tu diseño podría ser difícil de escanear.',
   }
 };
 
-export function t(key: keyof typeof dictionaries['ja']) {
-  const lang = store.state.language;
-  return dictionaries[lang][key] || dictionaries['en'][key] || key;
+export type LangKey = keyof typeof dictionaries;
+export type DictKey = keyof typeof dictionaries['ja'];
+
+export function t(key: DictKey) {
+  const lang = store.state.language as LangKey;
+  const dict = dictionaries[lang] || dictionaries['en'];
+  return dict[key] || dictionaries['en'][key] || key;
 }
 
 // Function to update DOM nodes carrying data-i18n attribute
 export function updateDOMTranslations() {
   const elements = document.querySelectorAll('[data-i18n]');
   elements.forEach(el => {
-    const key = el.getAttribute('data-i18n') as keyof typeof dictionaries['ja'];
+    const key = el.getAttribute('data-i18n') as DictKey;
     if (key) {
       el.textContent = t(key);
     }

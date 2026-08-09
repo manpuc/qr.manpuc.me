@@ -18,7 +18,7 @@ export interface AppState {
   emojiSize: number;
   errorCorrection: ErrorCorrection;
   theme: 'light' | 'dark' | 'auto';
-  language: 'ja' | 'en';
+  language: 'ja' | 'en' | 'zh' | 'es';
   qrRadius: number; // QRコード背景の角丸
 }
 
@@ -65,13 +65,23 @@ class Store {
         this.state.theme = savedTheme;
       }
 
-      // 言語判定の優先順位: 1. URLパス (/en/), 2. html要素の lang 属性
+      // 言語判定の優先順位: 1. URLパス (/en/, /zh/, /es/), 2. html要素の lang 属性
       if (typeof window !== 'undefined') {
-        const isEnPath = window.location.pathname.startsWith('/en');
+        const path = window.location.pathname;
         const htmlLang = document.documentElement.lang;
 
-        if (isEnPath || htmlLang === 'en') {
+        if (path.startsWith('/en')) {
           this.state.language = 'en';
+        } else if (path.startsWith('/zh')) {
+          this.state.language = 'zh';
+        } else if (path.startsWith('/es')) {
+          this.state.language = 'es';
+        } else if (htmlLang === 'en') {
+          this.state.language = 'en';
+        } else if (htmlLang === 'zh') {
+          this.state.language = 'zh';
+        } else if (htmlLang === 'es') {
+          this.state.language = 'es';
         } else {
           this.state.language = 'ja';
         }

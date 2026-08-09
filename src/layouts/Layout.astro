@@ -6,32 +6,36 @@ interface Props {
   title?: string;
   description?: string;
   lang: string;
+  noindex?: boolean;
 }
 
-const { lang, title, description } = Astro.props;
+const { lang, title, description, noindex } = Astro.props;
 ---
 
 <!doctype html>
 <html lang={lang} data-theme="auto">
   <head>
-    <SEO title={title} description={description} lang={lang} />
+    <SEO title={title} description={description} lang={lang} noindex={noindex} />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap"
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Zen+Maru+Gothic:wght@400;500;700&display=swap"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Zen+Maru+Gothic:wght@400;500;700&display=swap"
       rel="stylesheet"
       media="print"
       onload="this.media='all'"
     />
     <noscript>
       <link
-        href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Zen+Maru+Gothic:wght@400;500;700&display=swap"
         rel="stylesheet"
       />
     </noscript>
-
-    <meta name="astro-view-transitions-enabled" content="false" />
   </head>
   <body>
     <slot />
@@ -47,7 +51,7 @@ const { lang, title, description } = Astro.props;
     </script>
     <!-- Cloudflare Web Analytics -->
     <script
-      async
+      defer
       src="https://static.cloudflareinsights.com/beacon.min.js"
       data-cf-beacon='{"token": "d6c3a0039b4e4cb194e7ea83521c8174"}'></script>
     <script

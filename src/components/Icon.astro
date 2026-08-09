@@ -1,39 +1,38 @@
 ---
-import { icon } from "@fortawesome/fontawesome-svg-core";
 import {
-  faDownload,
-  faCopy,
-  faTrash,
-  faGear,
-  faShareNodes,
-  faLanguage,
-  faClockRotateLeft,
-  faWandMagicSparkles,
-  faPalette,
-  faSun,
-  faMoon,
-  faCheck,
-  faInfoCircle,
-  faExclamationTriangle,
-  faRotateRight,
-} from "@fortawesome/free-solid-svg-icons";
+  Download,
+  Copy,
+  Trash,
+  Settings,
+  Share2,
+  Languages,
+  History,
+  Sparkles,
+  Palette,
+  Sun,
+  Moon,
+  Check,
+  Info,
+  AlertTriangle,
+  RotateCw,
+} from "@lucide/astro";
 
 const icons = {
-  download: faDownload,
-  copy: faCopy,
-  trash: faTrash,
-  gear: faGear,
-  share: faShareNodes,
-  language: faLanguage,
-  history: faClockRotateLeft,
-  magic: faWandMagicSparkles,
-  palette: faPalette,
-  sun: faSun,
-  moon: faMoon,
-  check: faCheck,
-  info: faInfoCircle,
-  warning: faExclamationTriangle,
-  rotate: faRotateRight,
+  download: Download,
+  copy: Copy,
+  trash: Trash,
+  gear: Settings,
+  share: Share2,
+  language: Languages,
+  history: History,
+  magic: Sparkles,
+  palette: Palette,
+  sun: Sun,
+  moon: Moon,
+  check: Check,
+  info: Info,
+  warning: AlertTriangle,
+  rotate: RotateCw,
 };
 
 interface Props {
@@ -51,8 +50,8 @@ const {
   "aria-label": ariaLabel,
   "aria-hidden": ariaHidden,
 } = Astro.props;
-const iconDef = icons[name as keyof typeof icons];
-const iconHtml = iconDef ? icon(iconDef).html[0] : "";
+
+const IconComponent = icons[name as keyof typeof icons];
 ---
 
 <span
@@ -60,19 +59,23 @@ const iconHtml = iconDef ? icon(iconDef).html[0] : "";
   id={id}
   aria-label={ariaLabel}
   aria-hidden={ariaHidden === undefined && !ariaLabel ? "true" : ariaHidden}
-  set:html={iconHtml}
-/>
+>
+  {IconComponent && <IconComponent width="1em" height="1em" stroke-width="2.5" />}
+</span>
 
 <style>
   .inline-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    vertical-align: middle;
+    line-height: 1;
+    flex-shrink: 0;
   }
   .inline-icon :global(svg) {
     width: 1em;
     height: 1em;
-    vertical-align: -0.125em;
-    fill: currentColor;
+    display: block;
+    color: currentColor; 
   }
 </style>

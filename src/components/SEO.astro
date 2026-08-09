@@ -3,29 +3,69 @@ interface Props {
   title?: string;
   description?: string;
   lang: string;
+  noindex?: boolean;
 }
+
+const seoDefaults: Record<string, { title: string; description: string; locale: string }> = {
+  ja: {
+    title: "QRメーカー | 絵文字入り・角丸デザインQR生成",
+    description: "登録不要・無料で高機能なQRコードが作れます。絵文字の配置、角丸、色のカスタマイズに対応。オフラインでも動作し、SVG/PNG保存が可能です。",
+    locale: "ja_JP",
+  },
+  en: {
+    title: "QR Maker | Design Custom QR with Emojis",
+    description: "Generate high-quality custom QR codes for free. Supports emojis, rounded corners, and custom colors. Works offline with SVG/PNG export.",
+    locale: "en_US",
+  },
+  zh: {
+    title: "QR 生成器 | 带表情符号和圆角设计的二维码",
+    description: "免费创建高质量自定义二维码。支持表情符号、圆角和自定义颜色。支持离线使用，可导出SVG/PNG。",
+    locale: "zh_CN",
+  },
+  es: {
+    title: "QR Maker | Crea Códigos QR Personalizados con Emojis",
+    description: "Genera códigos QR personalizados de alta calidad gratis. Admite emojis, esquinas redondeadas y colores personalizados. Funciona sin conexión con exportación SVG/PNG.",
+    locale: "es_ES",
+  },
+};
+
+const defaults = seoDefaults[Astro.props.lang] || seoDefaults.en;
 
 const {
   lang,
-  title = lang === "ja"
-    ? "QRメーカー | 絵文字入り・角丸デザインQR生成"
-    : "QR Maker | Design Custom QR with Emojis",
-  description = lang === "ja"
-    ? "登録不要・無料で高機能なQRコードが作れます。絵文字の配置、角丸、色のカスタマイズに対応。オフラインでも動作し、SVG/PNG保存が可能です。"
-    : "Generate high-quality custom QR codes for free. Supports emojis, rounded corners, and custom colors. Works offline with SVG/PNG export.",
+  title = defaults.title,
+  description = defaults.description,
+  noindex = false,
 } = Astro.props;
+
+const locale = (seoDefaults[lang] || seoDefaults.en).locale;
 
 const siteUrl = "https://qr.manpuc.me";
 const canonicalURL = new URL(Astro.url.pathname.replace(/\/$/, ""), siteUrl)
   .href;
-const ogImage = new URL("/app.png", siteUrl).href;
+
+// 言語ごとのOG画像パス
+const ogImageMap: Record<string, string> = {
+  ja: "/og/og-image_jp.png",
+  en: "/og/og-image_en.png",
+  zh: "/og/og-image_zh.png",
+  es: "/og/og-image_es.png",
+};
+const ogImage = new URL(ogImageMap[lang] || "/og/og-image_jp.png", siteUrl).href;
 
 // 多言語パスの定義
 const alternateLinks = [
   { rel: "alternate", hreflang: "ja", href: siteUrl + "/" },
   { rel: "alternate", hreflang: "en", href: siteUrl + "/en/" },
+  { rel: "alternate", hreflang: "zh", href: siteUrl + "/zh/" },
+  { rel: "alternate", hreflang: "es", href: siteUrl + "/es/" },
   { rel: "alternate", hreflang: "x-default", href: siteUrl + "/" },
 ];
+
+// パンくずの「ホーム」ラベル
+const homeLabels: Record<string, string> = {
+  ja: "ホーム", en: "Home", zh: "首页", es: "Inicio",
+};
 
 // JSON-LD data
 const softwareData = {
@@ -62,7 +102,7 @@ const breadcrumbData = {
     {
       "@type": "ListItem",
       position: 1,
-      name: lang === "ja" ? "ホーム" : "Home",
+      name: homeLabels[lang] || "Home",
       item: siteUrl,
     },
   ],
@@ -90,6 +130,7 @@ const breadcrumbData = {
 <title>{title}</title>
 <meta name="title" content={title} />
 <meta name="description" content={description} />
+{noindex && <meta name="robots" content="noindex, nofollow" />}
 
 <!-- Open Graph / Facebook -->
 <meta property="og:type" content="website" />
@@ -97,6 +138,7 @@ const breadcrumbData = {
 <meta property="og:title" content={title} />
 <meta property="og:description" content={description} />
 <meta property="og:image" content={ogImage} />
+<meta property="og:locale" content={locale} />
 
 <!-- Twitter -->
 <meta property="twitter:card" content="summary_large_image" />

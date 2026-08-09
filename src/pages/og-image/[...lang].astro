@@ -1,0 +1,232 @@
+---
+import Layout from "../../layouts/Layout.astro";
+
+
+export function getStaticPaths() {
+  return [
+    { params: { lang: undefined } },
+    { params: { lang: "en" } },
+    { params: { lang: "zh" } },
+    { params: { lang: "es" } },
+  ];
+}
+
+const { lang: langParam } = Astro.params;
+const lang = langParam || "ja";
+
+const t: Record<string, Record<string, string | string[]>> = {
+  ja: {
+    badge: "登録不要・完全無料",
+    titleStrong: "QR",
+    titleLight: "メーカー",
+    desc: "絵文字入り・角丸デザインのQRコードをブラウザだけで作成",
+    features: ["絵文字", "角丸", "色変更", "背景透過", "SVG", "PNG"],
+  },
+  en: {
+    badge: "Free — No Sign-up",
+    titleStrong: "QR",
+    titleLight: "Maker",
+    desc: "Create custom QR codes with emojis, rounded corners & colors",
+    features: ["Emoji", "Rounded", "Colors", "Transparent", "SVG", "PNG"],
+  },
+  zh: {
+    badge: "免费使用・无需注册",
+    titleStrong: "QR",
+    titleLight: "生成器",
+    desc: "在浏览器中创建带表情符号和圆角设计的二维码",
+    features: ["表情", "圆角", "颜色", "透明背景", "SVG", "PNG"],
+  },
+  es: {
+    badge: "Gratis — Sin registro",
+    titleStrong: "QR",
+    titleLight: "Maker",
+    desc: "Crea códigos QR personalizados con emojis, bordes redondeados y colores",
+    features: ["Emoji", "Redondeo", "Colores", "Transparente", "SVG", "PNG"],
+  },
+};
+
+const i18n = t[lang] || t.en;
+const features = i18n.features as string[];
+---
+
+<Layout title="OG Image" lang={lang} noindex={true}>
+  <main class="og-page">
+    <p class="og-guide">
+      以下の枠内が 1200×630 (OGPサイズ) です。ブラウザの開発者ツール等でノードをキャプチャしてください。
+    </p>
+
+    <div id="og-container" class="og">
+      <div class="og-glow"></div>
+
+      <div class="og-inner">
+
+        <div class="og-badge">
+          <img src="/favicon.svg" alt="" class="og-badge-icon" />
+          <span>{i18n.badge}</span>
+        </div>
+
+        <div class="og-hero">
+          <h1 class="og-title">
+            <span class="og-title-strong">{i18n.titleStrong}</span>{" "}
+            <span class="og-title-light">{i18n.titleLight}</span>
+          </h1>
+
+          <p class="og-desc">
+            {i18n.desc}
+          </p>
+        </div>
+
+        <div class="og-chips">
+          {features.map((f) => (
+            <div class="og-chip">
+              <span>{f}</span>
+            </div>
+          ))}
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <style is:global>
+    /* ── Page wrapper ── */
+    .og-page {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+
+    .og-page .top-controls { display: none !important; }
+
+    .og-guide {
+      margin-bottom: 1.5rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      opacity: 0.5;
+      text-align: center;
+    }
+
+    /* ── OG Container ── */
+    .og {
+      width: 1200px;
+      height: 630px;
+      position: relative;
+      overflow: hidden;
+      background: var(--color-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 0 1px var(--color-border);
+    }
+
+    .og-glow {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(
+        circle at center,
+        rgba(120, 120, 120, 0.06) 0%,
+        transparent 65%
+      );
+      z-index: 0;
+    }
+
+    /* ── Inner layout ── */
+    .og-inner {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 40px;
+      width: 100%;
+      padding: 0 100px;
+    }
+
+    /* ── Badge ── */
+    .og-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 24px;
+      background: rgba(120, 120, 120, 0.03);
+      border: 1px solid var(--color-border);
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--color-text);
+      opacity: 0.7;
+      white-space: nowrap;
+    }
+
+    .og-badge-icon {
+      width: 28px;
+      height: 28px;
+      object-fit: contain;
+    }
+
+    /* ── Hero text ── */
+    .og-hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .og-title {
+      font-size: 110px;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      margin: 0;
+      white-space: nowrap;
+    }
+
+    .og-title-strong {
+      color: var(--color-text);
+    }
+
+    .og-title-light {
+      color: var(--color-text);
+      opacity: 0.4;
+    }
+
+    .og-desc {
+      font-size: 36px;
+      font-weight: 500;
+      color: var(--color-text);
+      opacity: 0.6;
+      margin: 0;
+      line-height: 1.6;
+      max-width: 900px;
+      text-wrap: balance;
+    }
+
+    /* ── Chips ── */
+    .og-chips {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 16px;
+      max-width: 900px;
+    }
+
+    .og-chip {
+      padding: 12px 28px;
+      background: rgba(120, 120, 120, 0.02);
+      border: 1px solid var(--color-border);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .og-chip span {
+      font-size: 30px;
+      font-weight: 700;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      color: var(--color-text);
+      opacity: 0.8;
+      letter-spacing: 0.02em;
+    }
+  </style>
+</Layout>

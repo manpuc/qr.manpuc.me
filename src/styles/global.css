@@ -108,6 +108,9 @@ body {
 h1,
 h2,
 h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-weight: 700;
   margin-bottom: 0.6em;
   letter-spacing: -0.03em;
@@ -248,6 +251,92 @@ select:hover {
     top: 16px;
     right: 16px;
   }
+}
+
+/* Chinese Font Alignment */
+html[lang='zh'],
+html[lang='zh'] body,
+:lang(zh) {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif !important;
+}
+
+/* Language Dropdown Menu */
+.lang-dropdown-wrapper {
+  position: relative;
+}
+
+.lang-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--color-surface);
+  backdrop-filter: blur(25px) saturate(190%);
+  -webkit-backdrop-filter: blur(25px) saturate(190%);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 6px;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 150px;
+  z-index: 1100;
+  transform-origin: top right;
+  animation: langPopIn 0.3s var(--spring-bounce);
+}
+
+@keyframes langPopIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.85) translateY(-8px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.lang-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  color: var(--color-text);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background-color 0.25s var(--spring-smooth), transform 0.3s var(--spring-bounce), box-shadow 0.25s var(--spring-smooth);
+  position: relative;
+}
+
+.lang-item:hover {
+  background: var(--color-surface-hover);
+  transform: translateX(-4px) scale(1.02);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+.lang-item:active {
+  transform: scale(0.96);
+}
+
+.lang-item.active {
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.lang-item.active:hover {
+  transform: translateX(-4px) scale(1.02);
+}
+
+/* Open state indicator on the toggle button */
+button.icon-btn[aria-expanded="true"] {
+  background: var(--color-surface-hover);
+  transform: scale(1.08);
+  border-color: var(--color-primary);
 }
 
 /* Theme Icon Toggling */
@@ -680,7 +769,7 @@ input[type="number"]:focus {
 /* Dynamic Alert: iOS Aesthetic */
 .alert {
   margin-top: 24px;
-  padding: 16px;
+  padding: 14px 20px;
   border-radius: 16px;
   font-size: 14px;
   font-weight: 600;
@@ -688,37 +777,17 @@ input[type="number"]:focus {
   align-items: center;
   gap: 12px;
   text-align: left;
+  line-height: 1.4;
+  white-space: pre-line;
   transition: all 0.3s var(--spring-smooth);
   animation: slideDown 0.5s var(--spring-smooth);
 }
 
-@keyframes slideDown {
-  0% {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* アラート内のチェックアイコン等のアイコン調整用 */
-.alert .svg-inline--fa {
-  /* サイズ変更: 1.2emなどにすると大きくなります */
-  font-size: 1.1rem;
-
-  /* 位置の微調整: 確実に上下に動かしたい場合は relative と top を使用 */
-  position: relative;
-  top: 2px;
-  /* 1px で下へ、-1px で上へ移動 */
-  left: 0px;
-
-  /* アイコン自体の余白調整 */
-  margin: 0;
+.alert .inline-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
-  /* アイコンが潰れないように固定 */
 }
 
 .alert.safe {

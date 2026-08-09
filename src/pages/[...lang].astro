@@ -6,32 +6,74 @@ export function getStaticPaths() {
   return [
     { params: { lang: undefined } }, // Root (ja)
     { params: { lang: "en" } }, // English
+    { params: { lang: "zh" } }, // Chinese
+    { params: { lang: "es" } }, // Spanish
   ];
 }
 
 const { lang: langParam } = Astro.params;
 const lang = langParam || "ja";
 
-// SEO Metadata (Can be further customized per language if needed)
-const title =
-  lang === "ja"
-    ? "QRメーカー | 絵文字入り・角丸デザインQRコードを無料生成"
-    : "QR Maker | Generate Custom Design QR Codes with Emojis for Free";
+// SSR side i18n text lookup
+const pageText: Record<string, { title: string; description: string }> = {
+  ja: {
+    title: "QRメーカー | 絵文字入り・角丸デザインQRコードを無料生成",
+    description: "登録不要・無料で高機能なQRコードが作れます。絵文字の配置、角丸、色のカスタマイズ、背景透過に対応。オフラインでも動作し、SVG/PNG保存が可能です。",
+  },
+  en: {
+    title: "QR Maker | Generate Custom Design QR Codes with Emojis for Free",
+    description: "Create high-quality custom QR codes with emojis, rounded corners, and custom colors. No registration required. Works offline with SVG/PNG support.",
+  },
+  zh: {
+    title: "QR 生成器 | 免费生成带表情符号和圆角设计的二维码",
+    description: "免费创建高质量自定义二维码。支持表情符号、圆角和自定义颜色。无需注册，支持离线使用，可导出SVG/PNG。",
+  },
+  es: {
+    title: "QR Maker | Genera Códigos QR Personalizados con Emojis Gratis",
+    description: "Crea códigos QR personalizados de alta calidad con emojis, esquinas redondeadas y colores. Sin registro. Funciona sin conexión con exportación SVG/PNG.",
+  },
+};
 
-const description =
-  lang === "ja"
-    ? "登録不要・無料で高機能なQRコードが作れます。絵文字の配置、角丸、色のカスタマイズ、背景透過に対応。オフラインでも動作し、SVG/PNG保存が可能です。"
-    : "Create high-quality custom QR codes with emojis, rounded corners, and custom colors. No registration required. Works offline with SVG/PNG support.";
+const pt = pageText[lang] || pageText.en;
+const title = pt.title;
+const description = pt.description;
+
+// Helper function: returns the text for the current language from a dictionary
+type TextDict = Record<string, string>;
+function tr(dict: TextDict): string {
+  return dict[lang] || dict.en || "";
+}
 ---
 
 <Layout title={title} description={description} lang={lang}>
   <div class="top-controls">
-    <button
-      id="btn-lang"
-      class="icon-btn"
-      aria-label="Toggle Language"
-      title="Change Language"><Icon name="language" /></button
-    >
+    <div class="lang-dropdown-wrapper">
+      <button
+        id="btn-lang"
+        class="icon-btn"
+        aria-label="Select Language"
+        aria-expanded="false"
+        title="Change Language"><Icon name="language" /></button
+      >
+      <div id="lang-dropdown" class="lang-dropdown hidden">
+        <a href="/" lang="ja" class={lang === "ja" ? "lang-item active" : "lang-item"}>
+          <span>日本語</span>
+          {lang === "ja" && <Icon name="check" />}
+        </a>
+        <a href="/en/" lang="en" class={lang === "en" ? "lang-item active" : "lang-item"}>
+          <span>English</span>
+          {lang === "en" && <Icon name="check" />}
+        </a>
+        <a href="/zh/" lang="zh" class={lang === "zh" ? "lang-item active" : "lang-item"}>
+          <span>简体中文</span>
+          {lang === "zh" && <Icon name="check" />}
+        </a>
+        <a href="/es/" lang="es" class={lang === "es" ? "lang-item active" : "lang-item"}>
+          <span>Español</span>
+          {lang === "es" && <Icon name="check" />}
+        </a>
+      </div>
+    </div>
     <button
       id="btn-theme"
       class="icon-btn"
@@ -48,7 +90,7 @@ const description =
       <img src="/favicon.svg" class="page-icon" alt="" decoding="async" />
       <h1 class="app-title">
         <span data-i18n="appTitle"
-          >{lang === "ja" ? "QRメーカー" : "QR Maker"}</span
+          >{tr({ja: "QRメーカー", en: "QR Maker", zh: "QR 生成器", es: "QR Maker"})}</span
         >
       </h1>
     </header>
@@ -428,89 +470,38 @@ const description =
 
     <!-- SEO Content Section -->
     <section class="card content-section" style="margin-top: 40px;">
-      {
-        lang === "ja" ? (
-          <>
-            <h2 data-i18n="aboutTitle">QRメーカーについて</h2>
-            <p data-i18n="aboutText">
-              QRメーカーは、デザイン性に優れたQRコードをブラウザ上で簡単に作成できる無料ツールです。登録不要で、作成したデータがサーバーに送信されることはありません。完全にプライバシーに配慮したオフライン対応の設計となっています。
-            </p>
+      <h2 data-i18n="aboutTitle">{tr({ja: "QRメーカーについて", en: "About QR Maker", zh: "关于 QR 生成器", es: "Sobre QR Maker"})}</h2>
+      <p data-i18n="aboutText">
+        {tr({
+          ja: "QRメーカーは、デザイン性に優れたQRコードをブラウザ上で簡単に作成できる無料ツールです。登録不要で、作成したデータがサーバーに送信されることはありません。完全にプライバシーに配慮したオフライン対応の設計となっています。",
+          en: "QR Maker is a free web tool that allows you to easily create stylish QR codes directly in your browser. No registration is required, and your data is never sent to a server. It is a privacy-first, offline-capable application.",
+          zh: "QR 生成器是一款免费的在线工具，可让您直接在浏览器中轻松创建时尚的二维码。无需注册，您的数据不会发送到服务器。这是一款注重隐私、支持离线使用的应用。",
+          es: "QR Maker es una herramienta web gratuita que te permite crear fácilmente códigos QR elegantes directamente en tu navegador. No requiere registro y tus datos nunca se envían a un servidor. Es una aplicación que prioriza la privacidad y funciona sin conexión.",
+        })}
+      </p>
 
-            <div class="content-grid">
-              <div class="content-item">
-                <h3 data-i18n="featuresTitle">主な特徴</h3>
-                <ul>
-                  <li data-i18n="featureEmoji">
-                    <strong>絵文字埋め込み:</strong>{" "}
-                    QRコードの中央にお好みの絵文字を配置できます。
-                  </li>
-                  <li data-i18n="featureDesign">
-                    <strong>自由なデザイン:</strong>{" "}
-                    ドットの形状（四角、丸、角丸）や色を自由に変更可能。
-                  </li>
-                  <li data-i18n="featureExport">
-                    <strong>高品質書き出し:</strong>{" "}
-                    PNG形式だけでなく、拡大してもボケないSVG形式に対応。
-                  </li>
-                  <li data-i18n="featurePrivacy">
-                    <strong>プライバシー保護:</strong>{" "}
-                    データの入出力はすべてお使いのデバイス上で行われます。
-                  </li>
-                </ul>
-              </div>
-              <div class="content-item">
-                <h3 data-i18n="tipsTitle">作成のヒント</h3>
-                <p data-i18n="tipsText">
-                  QRコードの読み取り精度を保つため、前景色と背景色のコントラストを十分に確保することをお勧めします。本ツールには自動読み取りチェック機能が搭載されており、デザインが読み取りにくい場合は警告が表示されます。
-                </p>
-              </div>
-            </div>
-          </>
-        ) : (
-          <>
-            <h2 data-i18n="aboutTitle">About QR Maker</h2>
-            <p data-i18n="aboutText">
-              QR Maker is a free web tool that allows you to easily create
-              stylish QR codes directly in your browser. No registration is
-              required, and your data is never sent to a server. It is a
-              privacy-first, offline-capable application.
-            </p>
-
-            <div class="content-grid">
-              <div class="content-item">
-                <h3 data-i18n="featuresTitle">Key Features</h3>
-                <ul>
-                  <li data-i18n="featureEmoji">
-                    <strong>Emoji Integration:</strong> Place your favorite
-                    emoji in the center of the QR code.
-                  </li>
-                  <li data-i18n="featureDesign">
-                    <strong>Custom Design:</strong> Change dot styles (square,
-                    dots, rounded) and colors freely.
-                  </li>
-                  <li data-i18n="featureExport">
-                    <strong>High-Quality Export:</strong> Supports both PNG and
-                    scalable SVG formats.
-                  </li>
-                  <li data-i18n="featurePrivacy">
-                    <strong>Privacy First:</strong> All processing happens
-                    locally on your device.
-                  </li>
-                </ul>
-              </div>
-              <div class="content-item">
-                <h3 data-i18n="tipsTitle">Pro Tips</h3>
-                <p data-i18n="tipsText">
-                  To ensure readability, maintain high contrast between the
-                  foreground and background colors. This tool includes a
-                  real-time readability checker to warn you if your design might
-                  be hard to scan.
-                </p>
-              </div>
-            </div>
-          </>
-        )
-      }
+      <div class="content-grid">
+        <div class="content-item">
+          <h3 data-i18n="featuresTitle">{tr({ja: "主な特徴", en: "Key Features", zh: "主要特点", es: "Características principales"})}</h3>
+          <ul>
+            <li data-i18n="featureEmoji">{tr({ja: "絵文字埋め込み: QRコードの中央にお好みの絵文字を配置できます。", en: "Emoji Integration: Place your favorite emoji in the center of the QR code.", zh: "表情嵌入：将您喜欢的表情放置在二维码中心。", es: "Integración de emoji: Coloca tu emoji favorito en el centro del código QR."})}</li>
+            <li data-i18n="featureDesign">{tr({ja: "自由なデザイン: ドットの形状（四角、丸、角丸）や色を自由に変更可能。", en: "Custom Design: Change dot styles (square, dots, rounded) and colors freely.", zh: "自定义设计：自由更改点样式（方形、圆点、圆角）和颜色。", es: "Diseño personalizado: Cambia estilos de puntos y colores libremente."})}</li>
+            <li data-i18n="featureExport">{tr({ja: "高品質書き出し: PNG形式だけでなく、拡大してもボケないSVG形式に対応。", en: "High-Quality Export: Supports both PNG and scalable SVG formats.", zh: "高质量导出：支持 PNG 和可缩放的 SVG 格式。", es: "Exportación de alta calidad: Compatible con formatos PNG y SVG escalable."})}</li>
+            <li data-i18n="featurePrivacy">{tr({ja: "プライバシー保護: データの入出力はすべてお使いのデバイス上で行われます。", en: "Privacy First: All processing happens locally on your device.", zh: "隐私优先：所有处理都在您的设备上本地完成。", es: "Privacidad primero: Todo el procesamiento se realiza localmente en tu dispositivo."})}</li>
+          </ul>
+        </div>
+        <div class="content-item">
+          <h3 data-i18n="tipsTitle">{tr({ja: "作成のヒント", en: "Pro Tips", zh: "使用技巧", es: "Consejos"})}</h3>
+          <p data-i18n="tipsText">
+            {tr({
+              ja: "QRコードの読み取り精度を保つため、前景色と背景色のコントラストを十分に確保することをお勧めします。本ツールには自動読み取りチェック機能が搭載されており、デザインが読み取りにくい場合は警告が表示されます。",
+              en: "To ensure readability, maintain high contrast between the foreground and background colors. This tool includes a real-time readability checker to warn you if your design might be hard to scan.",
+              zh: "为确保可读性，请保持前景色和背景色之间的高对比度。此工具包含实时可读性检查器，当您的设计可能难以扫描时会发出警告。",
+              es: "Para garantizar la legibilidad, mantén un alto contraste entre los colores de primer plano y fondo. Esta herramienta incluye un verificador de legibilidad en tiempo real.",
+            })}
+          </p>
+        </div>
+      </div>
     </section>
 
     <div style="text-align: center; margin-top: 40px; margin-bottom: 20px;">
@@ -553,15 +544,19 @@ const description =
     transform: scale(1.03);
   }
   .page-icon {
-    width: 2.4rem;
-    height: 2.4rem;
+    width: 2.2rem;
+    height: 2.2rem;
+    display: block;
+    object-fit: contain;
     flex-shrink: 0;
   }
   .app-title {
     font-size: 2rem;
     font-weight: 700;
     margin: 0;
-    line-height: 1;
+    line-height: 1.2;
+    display: flex;
+    align-items: center;
     letter-spacing: -0.02em;
   }
   .grid-layout {
@@ -588,16 +583,24 @@ const description =
   }
   .alert {
     margin-top: 24px;
-    padding: 20px;
+    padding: 14px 20px;
     border-radius: var(--radius-md);
     font-size: 0.95rem;
     font-weight: 700;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 12px;
     text-align: left;
+    line-height: 1.4;
+    white-space: pre-line;
     transition: all var(--transition-bounce);
     animation: slideDown 0.6s var(--spring-bounce);
+  }
+  .alert .inline-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
   }
   @keyframes slideDown {
     0% {

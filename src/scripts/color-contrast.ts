@@ -54,6 +54,8 @@ export interface ReadabilityResult {
   ratio: number;
   messageJa: string;
   messageEn: string;
+  messageZh: string;
+  messageEs: string;
 }
 
 /**
@@ -66,7 +68,9 @@ export function checkQRReadability(
   isTransparentBg: boolean,
   dotStyle: string,
   hasEmoji: boolean,
-  errorCorrection: string
+  errorCorrection: string,
+  emojiSize: number = 0.4,
+  margin: number = 10
 ): ReadabilityResult {
   // 基本指標
   let ratio = getContrastRatio(fgHex, bgHex);
@@ -86,33 +90,79 @@ export function checkQRReadability(
 
   const messagesJa: string[] = [];
   const messagesEn: string[] = [];
+  const messagesZh: string[] = [];
+  const messagesEs: string[] = [];
+
   const suggestionsJa: string[] = [];
   const suggestionsEn: string[] = [];
+  const suggestionsZh: string[] = [];
+  const suggestionsEs: string[] = [];
 
   if (isReverted) {
     messagesJa.push('色が反転しています。');
     messagesEn.push('Colors are inverted.');
-    suggestionsJa.push('前景を暗く、背景を明るくしてください。');
-    suggestionsEn.push('Make foreground darker and background lighter.');
+    messagesZh.push('颜色已反转。');
+    messagesEs.push('Los colores están invertidos.');
+
+    suggestionsJa.push('前景色を暗く、背景色を明るくしてください。');
+    suggestionsEn.push('Use dark QR on light background.');
+    suggestionsZh.push('前景色宜深，背景色宜浅。');
+    suggestionsEs.push('Usa un QR oscuro en fondo claro.');
     effectiveRatio *= 0.8;
   }
 
   // 明度差・彩度差チェック
   if (brightnessDiff < 125) {
-    suggestionsJa.push('明度差が不足しています（暗い色同士、または明るい色同士など）。');
-    suggestionsEn.push('Lack of brightness difference (colors are too similar in lightness).');
+    suggestionsJa.push('明暗差を広げてください。');
+    suggestionsEn.push('Increase brightness contrast.');
+    suggestionsZh.push('请加大颜色明暗差。');
+    suggestionsEs.push('Aumenta la diferencia de brillo.');
     effectiveRatio *= 0.9;
   }
   if (colorDiff < 500) {
-    suggestionsJa.push('彩度・色相の差が不足しています。');
-    suggestionsEn.push('Lack of color difference.');
+    suggestionsJa.push('色相の差を広げてください。');
+    suggestionsEn.push('Use more distinct hues.');
+    suggestionsZh.push('请加大色相差异。');
+    suggestionsEs.push('Usa tonos más distintos.');
     effectiveRatio *= 0.9;
   }
 
-  // 絵文字と誤り訂正の関係
-  if (hasEmoji && errorCorrection !== 'H') {
-    messagesJa.push('画像埋め込み時は誤り訂正を「H」にすることを推奨します。');
-    messagesEn.push('Error correction level "H" is recommended when embedding images.');
+  // 余白枠チェック (ISO規格では4モジュール以上のQuiet Zoneが必要)
+  if (margin === 0) {
+    suggestionsJa.push('余白枠が0です (4px以上を推奨)。');
+    suggestionsEn.push('Margin is 0 (4px+ recommended).');
+    suggestionsZh.push('边距为0 (建议4px以上)。');
+    suggestionsEs.push('El margen es 0 (se recomienda 4px+).');
+  }
+
+  // 絵文字と誤り訂正能力の検証
+  let emojiCapacityExceeded = false;
+  let emojiCapacityDanger = false;
+  if (hasEmoji) {
+    const ecCapacities: Record<string, number> = { L: 0.07, M: 0.15, Q: 0.25, H: 0.30 };
+    const maxCapacity = ecCapacities[errorCorrection] || 0.15;
+    const areaCovered = emojiSize * emojiSize;
+
+    if (areaCovered > maxCapacity) {
+      emojiCapacityExceeded = true;
+      if (areaCovered > maxCapacity + 0.02) {
+        emojiCapacityDanger = true;
+      }
+      messagesJa.push(`絵文字サイズ(${Math.round(areaCovered * 100)}%)が誤り訂正能力(${Math.round(maxCapacity * 100)}%)を超過。`);
+      messagesEn.push(`Emoji size (${Math.round(areaCovered * 100)}%) exceeds EC capacity (${Math.round(maxCapacity * 100)}%).`);
+      messagesZh.push(`表情尺寸 (${Math.round(areaCovered * 100)}%) 超过容错上限 (${Math.round(maxCapacity * 100)}%)。`);
+      messagesEs.push(`El tamaño del emoji (${Math.round(areaCovered * 100)}%) supera la capacidad CE (${Math.round(maxCapacity * 100)}%).`);
+
+      suggestionsJa.push('誤り訂正「H」を選択するか絵文字を小さくしてください。');
+      suggestionsEn.push('Set Error Correction to "H" or shrink emoji.');
+      suggestionsZh.push('请将容错设为“H”或缩小表情。');
+      suggestionsEs.push('Ajusta la corrección de errores a "H" o reduce el emoji.');
+    } else if (errorCorrection !== 'H') {
+      messagesJa.push('誤り訂正「H」を推奨。');
+      messagesEn.push('Level "H" recommended.');
+      messagesZh.push('建议容错级别设为“H”。');
+      messagesEs.push('Se recomienda el nivel "H".');
+    }
   }
 
   // 丸ドットでの読み取りにくさ加味
@@ -123,29 +173,39 @@ export function checkQRReadability(
   // 総合判定
   let level: ReadabilityLevel = 'safe';
 
-  if (effectiveRatio < 3.0 || brightnessDiff < 100) {
+  if (emojiCapacityDanger || effectiveRatio < 3.0 || brightnessDiff < 100) {
     level = 'danger';
-    messagesJa.unshift('コントラストや明度差が低すぎます！読み取れない可能性が高いです。');
-    messagesEn.unshift('Contrast or brightness diff is too low! Unreadable.');
-  } else if (effectiveRatio < 4.5 || isReverted || brightnessDiff < 125 || colorDiff < 500) {
+    messagesJa.unshift('読み取れない可能性が非常に高い状態です。');
+    messagesEn.unshift('High risk of unreadable QR code.');
+    messagesZh.unshift('极可能无法识别。');
+    messagesEs.unshift('Alto riesgo de QR ilegible.');
+  } else if (emojiCapacityExceeded || effectiveRatio < 4.5 || isReverted || brightnessDiff < 125 || colorDiff < 500) {
     level = 'warning';
     messagesJa.unshift('読み取りづらい可能性があります。');
-    messagesEn.unshift('Might be hard to read.');
+    messagesEn.unshift('Might be hard to scan.');
+    messagesZh.unshift('可能难以识别。');
+    messagesEs.unshift('Puede ser difícil de leer.');
   } else {
-    messagesJa.unshift('読み取りやすい配色です。');
-    messagesEn.unshift('Safe to read.');
+    messagesJa.unshift('読み取りやすい構成です。');
+    messagesEn.unshift('Safe to scan.');
+    messagesZh.unshift('易于识别。');
+    messagesEs.unshift('Fácil de leer.');
   }
 
   // 改善案を結合
   if (suggestionsJa.length > 0 && level !== 'safe') {
-    messagesJa.push('💡改善案: ' + suggestionsJa.join(' / '));
-    messagesEn.push('💡Tip: ' + suggestionsEn.join(' / '));
+    messagesJa.push('ヒント: ' + suggestionsJa.join(' / '));
+    messagesEn.push('Tip: ' + suggestionsEn.join(' / '));
+    messagesZh.push('提示: ' + suggestionsZh.join(' / '));
+    messagesEs.push('Consejo: ' + suggestionsEs.join(' / '));
   }
 
   return {
     level,
     ratio,
-    messageJa: messagesJa.join(' '),
-    messageEn: messagesEn.join(' ')
+    messageJa: messagesJa.join('\n'),
+    messageEn: messagesEn.join('\n'),
+    messageZh: messagesZh.join('\n'),
+    messageEs: messagesEs.join('\n'),
   };
 }
