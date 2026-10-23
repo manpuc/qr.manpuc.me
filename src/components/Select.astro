@@ -1,0 +1,300 @@
+---
+interface Option {
+  value: string;
+  label: string;
+  selected?: boolean;
+}
+
+interface Props {
+  id: string;
+  options: Option[];
+  value?: string;
+  className?: string;
+}
+
+const { id, options, value: selectedValue, className = "" } = Astro.props;
+
+const currentSelected = options.find((o) => (selectedValue ? o.value === selectedValue : o.selected)) || options[0];
+---
+
+<div class={`monolith-select-root ${className}`} data-select-id={id}>
+  <!-- Accessible Native Hidden Select for FormData and store sync -->
+  <select id={id} class="sr-only-select" tabindex="-1" aria-hidden="true">
+    {options.map((opt) => (
+      <option value={opt.value} selected={opt.value === currentSelected?.value}>
+        {opt.label}
+      </option>
+    ))}
+  </select>
+
+  <!-- Monolith SelectTrigger (Directly matching ui.manpuc.me select.tsx) -->
+  <button
+    type="button"
+    class="monolith-select-trigger"
+    data-slot="select-trigger"
+    aria-haspopup="listbox"
+    aria-expanded="false"
+  >
+    <span class="monolith-select-value" data-slot="select-value">
+      {currentSelected?.label}
+    </span>
+    <span class="monolith-select-icon" aria-hidden="true">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-50">
+        <path d="m6 9 6 6 6-6" />
+      </svg>
+    </span>
+  </button>
+
+  <!-- Monolith SelectContent (Dropdown Popup matching radix-ui/Monolith styling) -->
+  <div
+    class="monolith-select-content hidden"
+    data-slot="select-content"
+    role="listbox"
+  >
+    <div class="monolith-select-viewport">
+      {options.map((opt) => {
+        const isItemActive = opt.value === currentSelected?.value;
+        return (
+          <div
+            class={`monolith-select-item ${isItemActive ? "is-selected" : ""}`}
+            data-slot="select-item"
+            data-value={opt.value}
+            role="option"
+            aria-selected={isItemActive ? "true" : "false"}
+            tabindex="0"
+          >
+            <span class="monolith-select-item-text">{opt.label}</span>
+            <span class="monolith-select-item-indicator" data-slot="select-item-indicator">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+</div>
+
+<script>
+  // Setup custom select behavior matching Radix / Monolith
+  document.querySelectorAll<HTMLElement>('.monolith-select-root').forEach((root) => {
+    const trigger = root.querySelector<HTMLButtonElement>('.monolith-select-trigger');
+    const content = root.querySelector<HTMLElement>('.monolith-select-content');
+    const valueDisplay = root.querySelector<HTMLElement>('.monolith-select-value');
+    const nativeSelect = root.querySelector<HTMLSelectElement>('.sr-only-select');
+    const items = root.querySelectorAll<HTMLElement>('.monolith-select-item');
+
+    if (!trigger || !content || !nativeSelect || !valueDisplay) return;
+
+    function close() {
+      content.classList.add('hidden');
+      trigger.setAttribute('aria-expanded', 'false');
+    }
+
+    function open() {
+      // Close other selects first
+      document.querySelectorAll('.monolith-select-content').forEach((c) => {
+        if (c !== content) c.classList.add('hidden');
+      });
+      document.querySelectorAll('.monolith-select-trigger').forEach((t) => {
+        if (t !== trigger) t.setAttribute('aria-expanded', 'false');
+      });
+
+      content.classList.remove('hidden');
+      trigger.setAttribute('aria-expanded', 'true');
+    }
+
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isExpanded = trigger.getAttribute('aria-expanded') === 'true';
+      if (isExpanded) {
+        close();
+      } else {
+        open();
+      }
+    });
+
+    items.forEach((item) => {
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const val = item.getAttribute('data-value') || '';
+        const text = item.querySelector('.monolith-select-item-text')?.textContent || '';
+
+        // Update items
+        items.forEach((i) => {
+          i.classList.remove('is-selected');
+          i.setAttribute('aria-selected', 'false');
+        });
+        item.classList.add('is-selected');
+        item.setAttribute('aria-selected', 'true');
+
+        // Update value
+        valueDisplay.textContent = text;
+        nativeSelect.value = val;
+        nativeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+
+        close();
+      });
+    });
+
+    // Handle external state sync (when nativeSelect.value is changed programmatically)
+    nativeSelect.addEventListener('change', () => {
+      const currentVal = nativeSelect.value;
+      items.forEach((item) => {
+        const itemVal = item.getAttribute('data-value');
+        if (itemVal === currentVal) {
+          item.classList.add('is-selected');
+          item.setAttribute('aria-selected', 'true');
+          valueDisplay.textContent = item.querySelector('.monolith-select-item-text')?.textContent || '';
+        } else {
+          item.classList.remove('is-selected');
+          item.setAttribute('aria-selected', 'false');
+        }
+      });
+    });
+  });
+
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    if (!target.closest('.monolith-select-root')) {
+      document.querySelectorAll('.monolith-select-content').forEach((c) => c.classList.add('hidden'));
+      document.querySelectorAll('.monolith-select-trigger').forEach((t) => t.setAttribute('aria-expanded', 'false'));
+    }
+  });
+</script>
+
+<style>
+  .monolith-select-root {
+    position: relative;
+    width: 100%;
+  }
+
+  .sr-only-select {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* Matching: flex h-9 w-full items-center justify-between gap-2 rounded-none border border-input bg-transparent px-3 py-2 text-sm whitespace-nowrap outline-none hover:border-foreground */
+  .monolith-select-trigger {
+    display: flex;
+    height: 2.25rem; /* h-9 */
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    border-radius: 0; /* rounded-none */
+    border: 1px solid var(--border-input);
+    background-color: transparent;
+    padding: 0.5rem 0.75rem;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--foreground);
+    white-space: nowrap;
+    outline: none;
+    cursor: pointer;
+    user-select: none;
+    transition: border-color var(--transition-fast);
+  }
+
+  .monolith-select-trigger:hover,
+  .monolith-select-trigger:focus-visible {
+    border-color: var(--foreground);
+  }
+
+  .monolith-select-value {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--font-sans);
+  }
+
+  .monolith-select-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--muted-foreground);
+  }
+
+  /* Matching: z-50 min-w-[8rem] overflow-hidden rounded-none border bg-popover text-popover-foreground */
+  .monolith-select-content {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    width: 100%;
+    min-width: 8rem;
+    z-index: 100;
+    border-radius: 0; /* rounded-none */
+    border: 1px solid var(--border);
+    background-color: var(--background);
+    color: var(--foreground);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  }
+
+  .dark .monolith-select-content {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+  }
+
+  .monolith-select-viewport {
+    padding: 0.25rem;
+    max-height: 16rem;
+    overflow-y: auto;
+  }
+
+  /* Matching: relative flex w-full cursor-default items-center gap-2 rounded-none py-1.5 pr-8 pl-2 text-sm select-none focus:bg-accent focus:text-accent-foreground */
+  .monolith-select-item {
+    position: relative;
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    border-radius: 0;
+    padding: 0.375rem 0.5rem;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--foreground);
+    cursor: pointer;
+    user-select: none;
+    outline: none;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+  }
+
+  .monolith-select-item:hover,
+  .monolith-select-item:focus {
+    background-color: var(--accent);
+    color: var(--accent-foreground);
+  }
+
+  .monolith-select-item-text {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .monolith-select-item-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1rem;
+    height: 1rem;
+    opacity: 0;
+    color: var(--foreground);
+  }
+
+  .monolith-select-item.is-selected .monolith-select-item-indicator {
+    opacity: 1;
+  }
+
+  .hidden {
+    display: none !important;
+  }
+</style>

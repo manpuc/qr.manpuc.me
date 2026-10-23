@@ -1,5 +1,5 @@
 import qrCodeStylingModule from 'qr-code-styling';
-import { type AppState } from './store';
+import { type AppState, store } from './store';
 
 // Handle Vite/CJS default export quirk
 const QRCodeStyling = (qrCodeStylingModule as any).default || qrCodeStylingModule;
@@ -144,7 +144,7 @@ export async function generateQR(state: AppState, container: HTMLElement): Promi
       height: state.size,
       type: 'svg', // fast rendering
       data: state.data || 'https://qr.manpuc.me/',
-      margin: state.margin,
+      margin: Math.round(state.size * (state.margin / 100)),
       qrOptions: {
         typeNumber,
         mode: 'Byte',
@@ -162,6 +162,7 @@ export async function generateQR(state: AppState, container: HTMLElement): Promi
       },
       backgroundOptions: {
         color: state.transparentBg ? 'transparent' : state.bgColor,
+        round: state.transparentBg ? 0 : (state.qrRadius / 100),
       },
       cornersSquareOptions: {
         color: state.fgColor,
@@ -176,51 +177,163 @@ export async function generateQR(state: AppState, container: HTMLElement): Promi
     if (imageSource) {
       // @ts-ignore
       options.image = imageSource;
-    } else {
-      // @ts-ignore
-      options.image = null; // Explicitly remove image if disabled
     }
 
-    if (!qrCode) {
+    // Re-create QRCodeStyling if mode transitioned between having an image and not having an image
+    const hasImage = Boolean(imageSource);
+    const wasWithImage = qrCode && qrCode._options && Boolean(qrCode._options.image);
+    const needsRecreate = !qrCode || (wasWithImage !== hasImage);
+
+    if (needsRecreate) {
       qrCode = new QRCodeStyling(options);
-      container.innerHTML = ''; // clear
+      container.innerHTML = '';
       qrCode.append(container);
     } else {
       qrCode.update(options);
     }
 
-    // Apply corner radius to outer background rect in SVG for accurate export & display
-    applyCornerRadiusToSvg(container, state.qrRadius);
+    // Await async drawing promise from qr-code-styling if present
+    if (qrCode._svgDrawingPromise) {
+      await qrCode._svgDrawingPromise;
+    }
 
-    // Return the SVG as data URL for history/preview
-    const blob = await qrCode.getRawData('svg');
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve((reader.result as string) || '');
-      reader.readAsDataURL(blob);
-    });
+    // Fix SVG scaling: Add viewBox so SVG always scales 100% sharply without jumping or squishing
+    const svg = container.querySelector('svg');
+    if (svg) {
+      svg.setAttribute('viewBox', `0 0 ${state.size} ${state.size}`);
+      svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+      svg.style.width = '100%';
+      svg.style.height = '100%';
+      svg.style.display = 'block';
+
+      // Remove any erroneous root clip-path on <svg> itself
+      svg.removeAttribute('clip-path');
+
+      // When corner radius > 0, clip internal graphics cleanly inside SVG viewBox space
+      if (state.qrRadius > 0) {
+        const radiusPx = (state.size / 2) * (state.qrRadius / 100);
+        const clipId = 'qr-frame-clip-' + Math.random().toString(36).slice(2, 8);
+        const defs = svg.querySelector('defs') || svg.insertBefore(document.createElementNS('http://www.w3.org/2000/svg', 'defs'), svg.firstChild);
+        
+        const clipPath = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
+        clipPath.setAttribute('id', clipId);
+        const clipRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        clipRect.setAttribute('x', '0');
+        clipRect.setAttribute('y', '0');
+        clipRect.setAttribute('width', state.size.toString());
+        clipRect.setAttribute('height', state.size.toString());
+        clipRect.setAttribute('rx', radiusPx.toString());
+        clipRect.setAttribute('ry', radiusPx.toString());
+        clipPath.appendChild(clipRect);
+        defs.appendChild(clipPath);
+
+        // Group all visual children in an inner <g clip-path="..."> so coordinates match SVG viewBox
+        const contentGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        contentGroup.setAttribute('clip-path', `url(#${clipId})`);
+        const children = Array.from(svg.childNodes);
+        for (const child of children) {
+          if (child !== defs && child !== contentGroup) {
+            contentGroup.appendChild(child);
+          }
+        }
+        svg.appendChild(contentGroup);
+      }
+    }
+
+    // Container border-radius reflects the corner radius on preview card boundary and shadow
+    container.style.borderRadius = `${state.qrRadius * 0.5}%`;
+    container.style.overflow = 'hidden';
+
+    // Synchronously serialize SVG for history thumbnail - ensures xmlns for valid image decoding
+    if (svg) {
+      let svgStr = serializeSvg(svg, state.size);
+      return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
+    }
+    return '';
   } catch (err) {
     console.error('Failed to generate QR Code:', err);
     return '';
   }
 }
 
-export async function downloadQR(state: AppState, ext: 'png' | 'svg', sizeMultiplier: number = 1) {
-  if (!qrCode) return;
-  const origSize = state.size;
-  if (sizeMultiplier !== 1) {
-    await qrCode.update({ width: origSize * sizeMultiplier, height: origSize * sizeMultiplier });
+export function serializeSvg(svg: SVGSVGElement, size: number): string {
+  const clone = svg.cloneNode(true) as SVGSVGElement;
+  clone.setAttribute('width', size.toString());
+  clone.setAttribute('height', size.toString());
+  clone.setAttribute('viewBox', `0 0 ${size} ${size}`);
+  clone.style.width = `${size}px`;
+  clone.style.height = `${size}px`;
+  if (!clone.getAttribute('xmlns')) {
+    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
   }
-  await qrCode.download({
-    name: 'qrmaker-' + Date.now(),
-    extension: ext
+  clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+  return new XMLSerializer().serializeToString(clone);
+}
+
+export async function svgToPngBlob(svgStr: string, size: number): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const svgBlob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        URL.revokeObjectURL(url);
+        return reject(new Error('Canvas 2D context not available'));
+      }
+      ctx.clearRect(0, 0, size, size);
+      ctx.drawImage(img, 0, 0, size, size);
+      URL.revokeObjectURL(url);
+      canvas.toBlob((blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error('Canvas toBlob failed'));
+      }, 'image/png');
+    };
+    img.onerror = (e) => {
+      URL.revokeObjectURL(url);
+      reject(e);
+    };
+    img.src = url;
   });
-  if (sizeMultiplier !== 1) {
-    await qrCode.update({ width: origSize, height: origSize });
-  }
 }
 
 export async function getRawBlob(ext: 'png' | 'svg'): Promise<Blob | null> {
-  if (!qrCode) return null;
-  return await qrCode.getRawData(ext);
+  const preview = document.getElementById('qr-preview');
+  if (!preview) return null;
+  const svg = preview.querySelector('svg');
+  if (!svg) return null;
+
+  const size = store.state.size;
+  const svgStr = serializeSvg(svg, size);
+
+  if (ext === 'svg') {
+    return new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+  } else {
+    try {
+      return await svgToPngBlob(svgStr, size);
+    } catch (err) {
+      console.error('Failed to export PNG from SVG:', err);
+      if (qrCode) return await qrCode.getRawData('png');
+      return null;
+    }
+  }
+}
+
+export async function downloadQR(state: AppState, ext: 'png' | 'svg', _sizeMultiplier: number = 1) {
+  const blob = await getRawBlob(ext);
+  if (!blob) return;
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `qrmaker-${Date.now()}.${ext}`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 200);
 }

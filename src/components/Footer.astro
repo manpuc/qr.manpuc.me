@@ -1,0 +1,422 @@
+---
+// Shared universal site footer component matching MANPUC standard (char.manpuc.me)
+interface Props {
+  lang: string;
+}
+
+const { lang } = Astro.props;
+---
+
+<footer class="site-footer">
+  <div class="footer-container">
+    <div class="footer-grid">
+      <!-- 1. Brand Column -->
+      <div class="footer-col brand-col">
+        <a href="https://manpuc.me" class="brand-title">MANPUC</a>
+        <span class="copyright-text">&copy; 2026</span>
+      </div>
+
+      <!-- 2. Navigation Column -->
+      <div class="footer-col nav-col">
+        <ul class="footer-links">
+          <li><a href={`https://manpuc.me${lang === 'en' ? '/en/' : '/'}`} class="footer-link">HOME</a></li>
+          <li><a href={`https://manpuc.me${lang === 'en' ? '/en/about' : '/about'}`} class="footer-link">ABOUT</a></li>
+          <li><a href={`https://manpuc.me${lang === 'en' ? '/en/works' : '/works'}`} class="footer-link">ALL WORKS</a></li>
+          <li><a href={`https://manpuc.me${lang === 'en' ? '/en/contact' : '/contact'}`} class="footer-link">CONTACT</a></li>
+          <li><a href={`https://manpuc.me${lang === 'en' ? '/en/terms' : '/terms'}`} class="footer-link">TERMS & PRIVACY</a></li>
+        </ul>
+      </div>
+
+      <!-- 3. Preferences Column -->
+      <div class="footer-col controls-col">
+        <div class="footer-icon-controls">
+          <!-- Language Selector -->
+          <div class="popover-wrapper" id="footer-lang-wrapper">
+            <button
+              type="button"
+              class="icon-trigger-btn lang-text-btn"
+              id="footer-lang-btn"
+              aria-label="Select language"
+            >
+              <span class="current-lang-text">{lang.toUpperCase()}</span>
+            </button>
+            <div class="popover-menu" id="footer-lang-menu" role="menu">
+              <a href="/" class={`popover-item ${lang === "ja" ? "active" : ""}`} role="menuitem">
+                <span class="item-code">JA</span>
+                <span class="item-name">日本語</span>
+              </a>
+              <a href="/en/" class={`popover-item ${lang === "en" ? "active" : ""}`} role="menuitem">
+                <span class="item-code">EN</span>
+                <span class="item-name">English</span>
+              </a>
+              <a href="/zh/" class={`popover-item ${lang === "zh" ? "active" : ""}`} role="menuitem">
+                <span class="item-code">ZH</span>
+                <span class="item-name">简体中文</span>
+              </a>
+              <a href="/es/" class={`popover-item ${lang === "es" ? "active" : ""}`} role="menuitem">
+                <span class="item-code">ES</span>
+                <span class="item-name">Español</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Theme Selector -->
+          <div class="popover-wrapper" id="footer-theme-wrapper">
+            <button
+              type="button"
+              class="icon-trigger-btn"
+              id="footer-theme-btn"
+              aria-label="Select theme"
+            >
+              <svg class="theme-icon-sun" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>
+              <svg class="theme-icon-moon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
+            </button>
+            <div class="popover-menu" id="footer-theme-menu" role="menu">
+              <button type="button" class="popover-item" data-theme-val="light" role="menuitem">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>
+                <span>Light</span>
+              </button>
+              <button type="button" class="popover-item" data-theme-val="dark" role="menuitem">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
+                <span>Dark</span>
+              </button>
+              <button type="button" class="popover-item" data-theme-val="system" role="menuitem">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"></rect><line x1="8" x2="16" y1="21" y2="21"></line><line x1="12" x2="12" y1="17" y2="21"></line></svg>
+                <span>System</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Mobile Bottom Copyright -->
+      <div class="mobile-copyright-row">
+        <span class="copyright-text">&copy; 2026</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Theme popover logic & persistence matching char.manpuc.me
+  const langWrapper = document.getElementById('footer-lang-wrapper');
+  const langBtn = document.getElementById('footer-lang-btn');
+  const themeWrapper = document.getElementById('footer-theme-wrapper');
+  const themeBtn = document.getElementById('footer-theme-btn');
+  const themeItems = document.querySelectorAll('#footer-theme-menu .popover-item');
+
+  function closeAll() {
+    langWrapper?.classList.remove('is-open');
+    themeWrapper?.classList.remove('is-open');
+  }
+
+  langBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpen = langWrapper?.classList.contains('is-open');
+    closeAll();
+    if (!isOpen) langWrapper?.classList.add('is-open');
+  });
+
+  themeBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpen = themeWrapper?.classList.contains('is-open');
+    closeAll();
+    if (!isOpen) themeWrapper?.classList.add('is-open');
+  });
+
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    if (!langWrapper?.contains(target) && !themeWrapper?.contains(target)) {
+      closeAll();
+    }
+  });
+
+  function applyTheme(pref: string) {
+    const isDark = pref === 'dark' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+
+    if (pref === 'system') {
+      localStorage.removeItem('manpuc-theme');
+    } else {
+      localStorage.setItem('manpuc-theme', pref);
+    }
+
+    themeItems.forEach(item => {
+      if (item.getAttribute('data-theme-val') === pref) {
+        item.classList.add('active');
+      } else {
+        item.classList.remove('active');
+      }
+    });
+  }
+
+  const savedTheme = localStorage.getItem('manpuc-theme') || 'system';
+  applyTheme(savedTheme);
+
+  themeItems.forEach(item => {
+    item.addEventListener('click', () => {
+      const val = item.getAttribute('data-theme-val') || 'system';
+      applyTheme(val);
+      closeAll();
+    });
+  });
+
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    const current = localStorage.getItem('manpuc-theme') || 'system';
+    if (current === 'system') {
+      applyTheme('system');
+    }
+  });
+</script>
+
+<style>
+  .site-footer {
+    border-top: 1px solid var(--border);
+    padding: 3.5rem 0 3rem;
+    margin-top: auto;
+    font-family: var(--font-mono);
+    background-color: var(--background);
+    width: 100%;
+  }
+
+  .footer-container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  .footer-grid {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 2.5rem 3rem;
+    align-items: flex-start;
+  }
+
+  .mobile-copyright-row {
+    display: none;
+  }
+
+  .footer-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+  }
+
+  .brand-col {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    gap: 1.25rem;
+    align-items: flex-start;
+    padding-right: 0.5rem;
+  }
+
+  .brand-title {
+    font-size: 1.125rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: var(--foreground);
+    text-decoration: none;
+    line-height: 1;
+  }
+
+  .copyright-text {
+    font-size: 0.6875rem;
+    color: var(--muted-foreground);
+    letter-spacing: 0.05em;
+    line-height: 1;
+  }
+
+  .footer-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-rows: repeat(3, auto);
+    gap: 0.5rem 2.5rem;
+    align-items: center;
+  }
+
+  .footer-link {
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: var(--muted-foreground);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    transition: color 150ms ease;
+    white-space: nowrap;
+  }
+
+  .footer-link:hover {
+    color: var(--foreground);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .footer-icon-controls {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding-top: 0.125rem;
+  }
+
+  .popover-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+
+  .icon-trigger-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    background: transparent;
+    color: var(--muted-foreground);
+    border: none;
+    cursor: pointer;
+    border-radius: 0;
+    transition: color 150ms ease;
+  }
+
+  .icon-trigger-btn:hover {
+    color: var(--foreground);
+    background: transparent;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .current-lang-text {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+
+  .theme-icon-sun {
+    display: block;
+  }
+  .theme-icon-moon {
+    display: none;
+  }
+
+  :global(.dark) .theme-icon-sun {
+    display: none;
+  }
+  :global(.dark) .theme-icon-moon {
+    display: block;
+  }
+
+  .popover-menu {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    right: 0;
+    background-color: var(--background);
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    padding: 4px;
+    min-width: 120px;
+    display: none;
+    flex-direction: column;
+    z-index: 100;
+  }
+
+  :global(.dark) .popover-menu {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+
+  .popover-wrapper.is-open .popover-menu {
+    display: flex;
+  }
+
+  .popover-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    color: var(--muted-foreground);
+    text-decoration: none;
+    background: transparent;
+    border: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 0;
+    transition: background 150ms ease, color 150ms ease;
+  }
+
+  .popover-item:hover,
+  .popover-item.active {
+    background-color: var(--muted);
+    color: var(--foreground);
+    transform: none;
+    box-shadow: none;
+  }
+
+  .item-code {
+    font-weight: 700;
+    width: 20px;
+  }
+
+  @media (max-width: 768px) {
+    .footer-grid {
+      grid-template-columns: 1fr;
+      gap: 2.25rem;
+      text-align: center;
+      justify-items: center;
+    }
+    .brand-col {
+      grid-column: span 1;
+      writing-mode: horizontal-tb !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      width: 100% !important;
+      margin: 0 auto !important;
+      padding-right: 0 !important;
+    }
+    .brand-col .brand-title {
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      display: inline-block;
+      text-align: center;
+      margin: 0 auto;
+    }
+    .brand-col .copyright-text { display: none; }
+    .nav-col { align-items: center; width: 100%; }
+    .footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.75rem 1.75rem;
+    }
+    .controls-col { align-items: center; width: 100%; }
+    .footer-icon-controls { justify-content: center; }
+    .popover-menu {
+      left: 50% !important;
+      right: auto !important;
+      transform: translateX(-50%);
+    }
+    .mobile-copyright-row {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      padding-top: 0.5rem;
+    }
+  }
+</style>

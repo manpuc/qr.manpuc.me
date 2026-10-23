@@ -1,5 +1,6 @@
 ---
 import SEO from "../components/SEO.astro";
+import Footer from "../components/Footer.astro";
 import "../styles/global.css";
 
 interface Props {
@@ -13,32 +14,38 @@ const { lang, title, description, noindex } = Astro.props;
 ---
 
 <!doctype html>
-<html lang={lang} data-theme="auto">
+<html lang={lang}>
   <head>
     <SEO title={title} description={description} lang={lang} noindex={noindex} />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      rel="preload"
-      as="style"
-      href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Zen+Maru+Gothic:wght@400;500;700&display=swap"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Zen+Maru+Gothic:wght@400;500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Noto+Sans+JP:wght@400;500;700&display=swap"
       rel="stylesheet"
-      media="print"
-      onload="this.media='all'"
     />
-    <noscript>
-      <link
-        href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Zen+Maru+Gothic:wght@400;500;700&display=swap"
-        rel="stylesheet"
-      />
-    </noscript>
+
+    <script is:inline>
+      (function() {
+        try {
+          var pref = localStorage.getItem('manpuc-theme') || 'system';
+          var isDark = pref === 'dark' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+            document.documentElement.setAttribute('data-theme', 'dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.setAttribute('data-theme', 'light');
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
-  <body>
-    <slot />
+  <body class="selection:bg-foreground selection:text-background">
+    <div class="site-wrapper">
+      <slot />
+      <Footer lang={lang} />
+    </div>
 
     <script>
       // Load PWA virtual module
@@ -60,3 +67,12 @@ const { lang, title, description, noindex } = Astro.props;
       data-website-id="0b3b55f1-01a1-4db4-8208-2b89c04891db"></script>
   </body>
 </html>
+
+<style>
+  .site-wrapper {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+</style>

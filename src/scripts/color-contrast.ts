@@ -1,6 +1,6 @@
 // WCAG 2.0 relative luminance
 // https://www.w3.org/TR/WCAG20/#relativeluminancedef
-function getLuminance(r: number, g: number, b: number) {
+export function getLuminance(r: number, g: number, b: number) {
   const [rs, gs, bs] = [r, g, b].map(c => {
     c = c / 255;
     return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
@@ -9,7 +9,7 @@ function getLuminance(r: number, g: number, b: number) {
 }
 
 // Convert HEX to RGB
-function hexToRgb(hex: string) {
+export function hexToRgb(hex: string) {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result ? {
     r: parseInt(result[1], 16),

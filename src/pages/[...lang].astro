@@ -1,6 +1,7 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import Icon from "../components/Icon.astro";
+import Select from "../components/Select.astro";
 
 export function getStaticPaths() {
   return [
@@ -17,667 +18,593 @@ const lang = langParam || "ja";
 // SSR side i18n text lookup
 const pageText: Record<string, { title: string; description: string }> = {
   ja: {
-    title: "QRメーカー | 絵文字入り・角丸デザインQRコードを無料生成",
-    description: "登録不要・無料で高機能なQRコードが作れます。絵文字の配置、角丸、色のカスタマイズ、背景透過に対応。オフラインでも動作し、SVG/PNG保存が可能です。",
+    title: "QRメーカー | 絵文字入り・角丸デザインQRコード生成",
+    description: "登録不要・完全クライアントサイドで動作する高機能QRコードスタジオ。Monolith UIデザイン、リアルタイムプレビュー、絵文字やドットスタイルのカスタマイズ、SVG/PNG保存に対応。",
   },
   en: {
-    title: "QR Maker | Generate Custom Design QR Codes with Emojis for Free",
-    description: "Create high-quality custom QR codes with emojis, rounded corners, and custom colors. No registration required. Works offline with SVG/PNG support.",
+    title: "QR Maker | Custom Design QR Code Generator with Emojis",
+    description: "Client-side, privacy-first QR code studio. Monolith UI components, live preview, custom colors, dot styles, and center emojis with SVG/PNG exports.",
   },
   zh: {
-    title: "QR 生成器 | 免费生成带表情符号和圆角设计的二维码",
-    description: "免费创建高质量自定义二维码。支持表情符号、圆角和自定义颜色。无需注册，支持离线使用，可导出SVG/PNG。",
+    title: "QR 生成器 | 极简自定义二维码生成器",
+    description: "纯客户端二维码生成工具。Monolith UI 组件，实时预览，支持自定义点阵样式、调色板及中心表情，具备 SVG/PNG 矢量导出。",
   },
   es: {
-    title: "QR Maker | Genera Códigos QR Personalizados con Emojis Gratis",
-    description: "Crea códigos QR personalizados de alta calidad con emojis, esquinas redondeadas y colores. Sin registro. Funciona sin conexión con exportación SVG/PNG.",
+    title: "QR Maker | Generador de Códigos QR Personalizados",
+    description: "Herramienta de generación de códigos QR del lado del cliente sin registro. Componentes Monolith UI, vista previa en tiempo real y exportación SVG/PNG.",
   },
 };
 
 const pt = pageText[lang] || pageText.en;
 const title = pt.title;
 const description = pt.description;
-
-// Helper function: returns the text for the current language from a dictionary
-type TextDict = Record<string, string>;
-function tr(dict: TextDict): string {
-  return dict[lang] || dict.en || "";
-}
+const ja = lang === "ja";
 ---
 
 <Layout title={title} description={description} lang={lang}>
-  <div class="top-controls">
-    <div class="lang-dropdown-wrapper">
-      <button
-        id="btn-lang"
-        class="icon-btn"
-        aria-label="Select Language"
-        aria-expanded="false"
-        title="Change Language"><Icon name="language" /></button
-      >
-      <div id="lang-dropdown" class="lang-dropdown hidden">
-        <a href="/" lang="ja" class={lang === "ja" ? "lang-item active" : "lang-item"}>
-          <span>日本語</span>
-          {lang === "ja" && <Icon name="check" />}
-        </a>
-        <a href="/en/" lang="en" class={lang === "en" ? "lang-item active" : "lang-item"}>
-          <span>English</span>
-          {lang === "en" && <Icon name="check" />}
-        </a>
-        <a href="/zh/" lang="zh" class={lang === "zh" ? "lang-item active" : "lang-item"}>
-          <span>简体中文</span>
-          {lang === "zh" && <Icon name="check" />}
-        </a>
-        <a href="/es/" lang="es" class={lang === "es" ? "lang-item active" : "lang-item"}>
-          <span>Español</span>
-          {lang === "es" && <Icon name="check" />}
-        </a>
-      </div>
-    </div>
-    <button
-      id="btn-theme"
-      class="icon-btn"
-      aria-label="Toggle Theme"
-      title="Switch Theme"
-    >
-      <Icon name="sun" class="theme-sun" />
-      <Icon name="moon" class="theme-moon" />
-    </button>
-  </div>
+  <div class="page">
+    <main class="studio">
+      <h1 class="sr-only">QR MAKER</h1>
 
-  <div class="container">
-    <header class="app-header">
-      <img src="/favicon.svg" class="page-icon" alt="" decoding="async" />
-      <h1 class="app-title">
-        <span data-i18n="appTitle"
-          >{tr({ja: "QRメーカー", en: "QR Maker", zh: "QR 生成器", es: "QR Maker"})}</span
-        >
-      </h1>
-    </header>
-
-    <main class="grid-layout">
-      <div class="config-col">
-        <div class="card">
-          <h2>
-            <Icon name="gear" />
-            <span data-i18n="settingsTitle"
-              >{lang === "ja" ? "デザイン設定" : "Design Settings"}</span
-            >
-          </h2>
-
-          <div class="form-group">
-            <label for="input-data" data-i18n="dataLabel"
-              >{
-                lang === "ja" ? "データ (URLやテキスト)" : "Data (URL or Text)"
-              }</label
-            >
-            <input
-              type="text"
-              id="input-data"
-              data-i18n-placeholder="dataLabel"
-            />
-            <div
-              id="text-warning"
-              class="hidden"
-              style="color: var(--color-warning); font-size: 0.8rem; margin-top: 4px; font-weight: 700;"
-            >
-              ⚠ {
-                lang === "ja"
-                  ? "日本語などマルチバイト文字は機種によっては文字化けする可能性があります。"
-                  : "Multi-byte characters like Japanese might cause garbled text on some devices."
-              }
-            </div>
+      <!-- QR preview -->
+      <section class="preview-area" aria-label={ja ? "プレビュー" : "Preview"}>
+        <div class="preview-sticky">
+          <div id="qr-preview" class="qr-holder">
+            <div class="qr-loading"><Icon name="rotate" /></div>
           </div>
-
-          <div class="grid-2col">
-            <div class="form-group">
-              <label for="input-size" data-i18n="sizeLabel"
-                >{lang === "ja" ? "出力サイズ (px)" : "Output Size (px)"}</label
-              >
-              <select id="input-size">
-                <option value="128">128</option>
-                <option value="256" selected>256</option>
-                <option value="512">512</option>
-                <option value="1024">1024</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="input-ec" data-i18n="errorCorrectionLabel"
-                >{lang === "ja" ? "誤り訂正" : "Error Correction"}</label
-              >
-              <select id="input-ec">
-                <option value="L">L (7%)</option>
-                <option value="M" selected>M (15%)</option>
-                <option value="Q">Q (25%)</option>
-                <option value="H">H (30%)</option>
-              </select>
-            </div>
+          <div id="readability-alert" class="contrast-banner hidden" role="status">
+            <span id="alert-icon" class="banner-icon"></span>
+            <span id="alert-text" class="banner-text"></span>
           </div>
+        </div>
+      </section>
 
-          <div class="grid-2col">
-            <div class="form-group">
-              <label for="input-style" data-i18n="styleLabel"
-                >{lang === "ja" ? "ドットスタイル" : "Dot Style"}</label
-              >
-              <select id="input-style">
-                <option value="square" data-i18n="styleSquare"
-                  >{lang === "ja" ? "四角" : "Square"}</option
-                >
-                <option value="dots" data-i18n="styleDots"
-                  >{lang === "ja" ? "丸" : "Dots"}</option
-                >
-                <option value="rounded" selected data-i18n="styleRounded"
-                  >{lang === "ja" ? "角丸" : "Rounded"}</option
-                >
-              </select>
+      <!-- URL / Text input (below QR) -->
+      <section class="input-area">
+        <label for="input-data" class="sr-only">{ja ? "URL またはテキスト" : "URL or text"}</label>
+        <textarea
+          id="input-data"
+          placeholder={ja ? "URL やテキストを入力" : "Type a URL or text"}
+          class="hero-input"
+          rows="1"
+          spellcheck="false"
+          autocomplete="off"
+        ></textarea>
+        <p id="text-warning" class="note hidden">
+          {ja ? "日本語などのマルチバイト文字は、読み取り機器によって文字化けすることがあります。" : "Multi-byte characters may show garbled on some readers."}
+        </p>
+      </section>
+
+      <!-- All settings (statically expanded) -->
+      <section class="options">
+        <div class="options-body">
+          <div class="field">
+            <span class="label">{ja ? "ドット" : "Dots"}</span>
+            <div class="monolith-radio-group">
+              <label class="monolith-radio-item">
+                <input type="radio" name="dotStyle" value="square" />
+                <div class="monolith-radio-box"><div class="monolith-radio-dot"></div></div>
+                <span>Square</span>
+              </label>
+              <label class="monolith-radio-item">
+                <input type="radio" name="dotStyle" value="dots" />
+                <div class="monolith-radio-box"><div class="monolith-radio-dot"></div></div>
+                <span>Dots</span>
+              </label>
+              <label class="monolith-radio-item">
+                <input type="radio" name="dotStyle" value="rounded" checked />
+                <div class="monolith-radio-box"><div class="monolith-radio-dot"></div></div>
+                <span>Rounded</span>
+              </label>
             </div>
-            <div class="form-group">
-              <label for="input-margin" data-i18n="marginLabel"
-                >{lang === "ja" ? "余白枠 (px)" : "Margin (px)"}</label
-              >
-              <input
-                type="number"
-                id="input-margin"
-                value="10"
-                min="0"
-                max="100"
-              />
-            </div>
-          </div>
-
-          <div class="grid-2col">
-            <div class="form-group">
-              <label for="input-fg" data-i18n="fgColorLabel"
-                >{lang === "ja" ? "前景色" : "Foreground"}</label
-              >
-              <div class="color-picker-wrap">
-                <input type="color" id="input-fg" value="#000000" />
-                <input
-                  type="text"
-                  id="input-fg-text"
-                  value="#000000"
-                  style="width:100%;"
-                  data-i18n-aria-label="fgColorLabel"
-                />
-              </div>
-            </div>
-            <div class="form-group">
-              <label for="input-bg" data-i18n="bgColorLabel"
-                >{lang === "ja" ? "背景色" : "Background"}</label
-              >
-              <div class="color-picker-wrap">
-                <input type="color" id="input-bg" value="#ffffff" />
-                <input
-                  type="text"
-                  id="input-bg-text"
-                  value="#ffffff"
-                  style="width:100%;"
-                  data-i18n-aria-label="bgColorLabel"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="input-qr-radius" data-i18n="qrRadiusLabel"
-              >{lang === "ja" ? "QR全体の角丸" : "QR Corner Radius"}</label
-            >
-            <input
-              type="number"
-              id="input-qr-radius"
-              min="0"
-              max="100"
-              step="1"
-              value="12"
-            />
-          </div>
-
-          <div class="form-group">
-            <label class="toggle-label">
-              <input type="checkbox" id="input-transparent" />
-              <span data-i18n="transparentBgLabel"
-                >{
-                  lang === "ja"
-                    ? "背景を透過する (PNG保存用)"
-                    : "Transparent Background (for PNG)"
-                }</span
-              >
-            </label>
-          </div>
-
-          <hr
-            style="margin: 20px 0; border: 0; border-top: 1px solid var(--color-border);"
-          />
-
-          <div class="form-group">
-            <label for="input-emoji-mode" data-i18n="emojiModeLabel"
-              >{
-                lang === "ja" ? "中央絵文字 (Noto)" : "Center Emoji (Noto)"
-              }</label
-            >
-            <select id="input-emoji-mode">
-              <option value="none" data-i18n="emojiNone"
-                >{lang === "ja" ? "なし" : "None"}</option
-              >
-              <option value="text" data-i18n="emojiText"
-                >{
-                  lang === "ja" ? "テキスト描画方式" : "Text Render Mode"
-                }</option
-              >
-              <option value="image" data-i18n="emojiImage"
-                >{lang === "ja" ? "画像化方式" : "Image Render Mode"}</option
-              >
+            <select id="input-style" class="hidden" aria-hidden="true" tabindex="-1">
+              <option value="square">Square</option>
+              <option value="dots">Dots</option>
+              <option value="rounded" selected>Rounded</option>
             </select>
           </div>
 
-          <div class="form-group hidden" id="emoji-input-wrap">
-            <label for="input-emoji" data-i18n="emojiInputLabel"
-              >{
-                lang === "ja" ? "テキスト/絵文字入力" : "Input Emoji/Text"
-              }</label
-            >
-            <input type="text" id="input-emoji" placeholder="🌟" value="🌟" />
-            <div
-              id="emoji-warning"
-              class="hidden"
-              data-i18n="emojiWarning"
-              style="color: var(--color-warning); font-size: 0.8rem; margin-top: 4px; font-weight: 700;"
-            >
-              ⚠ {
-                lang === "ja"
-                  ? "絵文字以外が入力されています。画像化方式では1文字の絵文字のみ推奨されます。"
-                  : "Non-emoji characters detected. Only single emoji is recommended for Image mode."
-              }
+          <div class="field">
+            <span class="label">{ja ? "色" : "Color"}</span>
+            <div class="color-row">
+              <label class="swatch" title={ja ? "前景色" : "Foreground"}>
+                <input type="color" id="input-fg" value="#000000" />
+                <input type="text" id="input-fg-text" value="#000000" maxlength="7" spellcheck="false" class="hex" aria-label={ja ? "前景色" : "Foreground"} />
+              </label>
+              <label class="swatch" title={ja ? "背景色" : "Background"}>
+                <input type="color" id="input-bg" value="#ffffff" />
+                <input type="text" id="input-bg-text" value="#ffffff" maxlength="7" spellcheck="false" class="hex" aria-label={ja ? "背景色" : "Background"} />
+              </label>
+              <label class="monolith-checkbox-label">
+                <input type="checkbox" id="input-transparent" />
+                <div class="monolith-checkbox-box">
+                  <svg class="monolith-checkbox-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <span>{ja ? "背景を透過" : "Transparent"}</span>
+              </label>
             </div>
           </div>
 
-          <!-- Controls omitted for brevity in preview, kept in full content... -->
-          <div
-            id="emoji-common-controls"
-            class="hidden"
-            style="margin-bottom: 12px;"
-          >
-            <!-- ... same as index.astro ... -->
-            <div
-              class="form-group"
-              style="margin-bottom: 12px;"
-              id="emoji-size-wrap"
-            >
-              <label for="input-emoji-size" data-i18n="emojiSizeLabel"
-                >{lang === "ja" ? "サイズ (Max 50%)" : "Size (Max 50%)"}</label
-              >
-              <div class="flex-row">
-                <input
-                  type="range"
-                  id="input-emoji-size"
-                  min="10"
-                  max="50"
-                  value="40"
-                  style="flex: 1;"
-                />
-                <span
-                  id="val-emoji-size"
-                  style="min-width: 3em; font-variant-numeric: tabular-nums;"
-                  >40%</span
-                >
+          <div class="field">
+            <span class="label">{ja ? "中央" : "Center"}</span>
+            <div class="center-row">
+              <div class="monolith-radio-group">
+                <label class="monolith-radio-item">
+                  <input type="radio" name="emojiMode" value="none" checked />
+                  <div class="monolith-radio-box"><div class="monolith-radio-dot"></div></div>
+                  <span>{ja ? "なし" : "None"}</span>
+                </label>
+                <label class="monolith-radio-item">
+                  <input type="radio" name="emojiMode" value="image" />
+                  <div class="monolith-radio-box"><div class="monolith-radio-dot"></div></div>
+                  <span>{ja ? "絵文字" : "Emoji"}</span>
+                </label>
+                <label class="monolith-radio-item">
+                  <input type="radio" name="emojiMode" value="text" />
+                  <div class="monolith-radio-box"><div class="monolith-radio-dot"></div></div>
+                  <span>{ja ? "テキスト" : "Text"}</span>
+                </label>
+              </div>
+              <div id="emoji-input-wrap" class="hidden">
+                <input type="text" id="input-emoji" value="🌟" class="monolith-input emoji-input" maxlength="50" aria-label={ja ? "中央の文字" : "Center text"} />
               </div>
             </div>
-            <div
-              class="form-group hidden"
-              id="emoji-hue-wrap"
-              style="margin-bottom: 12px;"
-            >
-              <label for="input-emoji-hue" data-i18n="emojiHueLabel"
-                >{lang === "ja" ? "色相 (Hue)" : "Hue"}</label
-              >
-              <div class="flex-row">
-                <input
-                  type="range"
-                  id="input-emoji-hue"
-                  min="0"
-                  max="360"
-                  value="0"
-                  style="flex: 1;"
+            <select id="input-emoji-mode" class="hidden" aria-hidden="true" tabindex="-1">
+              <option value="none" selected>None</option>
+              <option value="image">Image</option>
+              <option value="text">Text</option>
+            </select>
+            <p id="emoji-warning" class="note hidden">
+              {ja ? "絵文字モードは絵文字1文字向けです。" : "Emoji mode works best with a single emoji."}
+            </p>
+
+            <div id="emoji-common-controls" class="grid-2 hidden">
+              <div class="slider" id="emoji-size-wrap">
+                <div class="slider-head"><span class="label">{ja ? "サイズ" : "Size"}</span><span id="val-emoji-size" class="val">40%</span></div>
+                <div class="monolith-slider-wrap"><input type="range" id="input-emoji-size" class="monolith-range-slider" min="10" max="50" value="40" /></div>
+              </div>
+              <div class="slider hidden" id="emoji-hue-wrap">
+                <div class="slider-head"><span class="label">{ja ? "色相" : "Hue"}</span><span id="val-emoji-hue" class="val">0°</span></div>
+                <div class="monolith-slider-wrap"><input type="range" id="input-emoji-hue" class="monolith-range-slider" min="0" max="360" value="0" /></div>
+              </div>
+            </div>
+            <div id="emoji-text-controls" class="grid-2 hidden">
+              <div class="slider" id="emoji-font-wrap">
+                <span class="label">{ja ? "フォント" : "Font"}</span>
+                <Select
+                  id="input-emoji-font"
+                  options={[
+                    { value: "sans-serif", label: "Sans-serif", selected: true },
+                    { value: "serif", label: "Serif" },
+                    { value: "monospace", label: "Monospace" },
+                    { value: "'Space Mono', monospace", label: "Space Mono" },
+                    { value: "'Quicksand', sans-serif", label: "Quicksand" }
+                  ]}
                 />
-                <span
-                  id="val-emoji-hue"
-                  style="min-width: 3em; font-variant-numeric: tabular-nums;"
-                  >0</span
-                >
+              </div>
+              <div class="slider" id="emoji-weight-wrap">
+                <div class="slider-head"><span class="label">{ja ? "太さ" : "Weight"}</span><span id="val-emoji-weight" class="val">700</span></div>
+                <div class="monolith-slider-wrap"><input type="range" id="input-emoji-weight" class="monolith-range-slider" min="100" max="900" step="100" value="700" /></div>
               </div>
             </div>
           </div>
-          <div id="emoji-text-controls" class="hidden">
-            <div
-              class="form-group"
-              id="emoji-font-wrap"
-              style="margin-bottom: 12px;"
-            >
-              <label for="input-emoji-font" data-i18n="emojiFontLabel"
-                >{lang === "ja" ? "フォント" : "Font"}</label
-              >
-              <select id="input-emoji-font" style="width: 100%;">
-                <option value="sans-serif"
-                  >{
-                    lang === "ja" ? "ゴシック (sans-serif)" : "Sans-serif"
-                  }</option
-                >
-                <option value="serif"
-                  >{lang === "ja" ? "明朝 (serif)" : "Serif"}</option
-                >
-                <option value="monospace"
-                  >{lang === "ja" ? "等幅 (monospace)" : "Monospace"}</option
-                >
-                <option value="'Zen Maru Gothic', sans-serif">Zen Maru</option>
-              </select>
-            </div>
-            <div
-              class="form-group"
-              id="emoji-weight-wrap"
-              style="margin-bottom: 12px;"
-            >
-              <label for="input-emoji-weight" data-i18n="emojiWeightLabel"
-                >{lang === "ja" ? "太さ" : "Weight"}</label
-              >
-              <div class="flex-row">
-                <input
-                  type="range"
-                  id="input-emoji-weight"
-                  min="100"
-                  max="900"
-                  step="100"
-                  value="700"
-                  style="flex: 1;"
+
+          <div class="field">
+            <span class="label">{ja ? "詳細" : "Advanced"}</span>
+            <div class="grid-2">
+              <div class="slider">
+                <span class="label">{ja ? "誤り訂正" : "Error correction"}</span>
+                <Select
+                  id="input-ec"
+                  options={[
+                    { value: "L", label: "L · 7%" },
+                    { value: "M", label: "M · 15%", selected: true },
+                    { value: "Q", label: "Q · 25%" },
+                    { value: "H", label: "H · 30%" }
+                  ]}
                 />
-                <span
-                  id="val-emoji-weight"
-                  style="min-width: 3em; font-variant-numeric: tabular-nums;"
-                  >700</span
-                >
+              </div>
+              <div class="slider">
+                <div class="slider-head"><span class="label">{ja ? "解像度" : "Resolution"}</span><span id="label-size" class="val">256px</span></div>
+                <Select
+                  id="input-size"
+                  options={[
+                    { value: "128", label: "128 × 128" },
+                    { value: "256", label: "256 × 256", selected: true },
+                    { value: "512", label: "512 × 512" },
+                    { value: "1024", label: "1024 × 1024" }
+                  ]}
+                />
+              </div>
+              <div class="slider">
+                <div class="slider-head"><span class="label">{ja ? "余白" : "Margin"}</span><span id="label-margin" class="val">5%</span></div>
+                <div class="monolith-slider-wrap"><input type="range" id="input-margin" class="monolith-range-slider" min="0" max="25" value="5" /></div>
+              </div>
+              <div class="slider">
+                <div class="slider-head"><span class="label">{ja ? "角丸" : "Corner radius"}</span><span id="val-qr-radius" class="val">10%</span></div>
+                <div class="monolith-slider-wrap"><input type="range" id="input-qr-radius" class="monolith-range-slider" min="0" max="100" value="10" /></div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div class="preview-col">
-        <div
-          class="card"
-          style="text-align: center; position: sticky; top: 20px;"
-        >
-          <h2>
-            <Icon name="magic" />
-            <span data-i18n="previewTitle"
-              >{lang === "ja" ? "プレビュー" : "Preview"}</span
-            >
-          </h2>
-          <div
-            id="qr-preview"
-            class="qr-preview-wrapper"
-            style="min-height: 256px;"
-          >
-            <div
-              class="qr-placeholder"
-              style="width: 256px; height: 256px; opacity: 0.1; background: currentColor; border-radius: 12px; display: flex; align-items: center; justify-content: center;"
-            >
-              <img
-                src="/favicon.svg"
-                class="placeholder-icon"
-                alt=""
-                decoding="async"
-              />
-            </div>
-          </div>
+      <!-- History (collapsible) -->
+      <details id="history-section" class="history-details" style="display: none;">
+        <summary class="history-summary">
+          <span class="label">{ja ? "履歴" : "History"}</span>
+          <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        </summary>
+        <div id="history-list" class="history-list-box"></div>
+      </details>
 
-          <div id="readability-alert" class="alert hidden">
-            <Icon name="check" id="alert-icon" />
-            <span id="alert-text"></span>
-          </div>
-
-          <div class="flex-col" style="margin-top: 20px;">
-            <button id="btn-dl-png"
-              ><Icon name="download" />
-              <span data-i18n="downloadPng"
-                >{lang === "ja" ? "PNG 保存" : "Save PNG"}</span
-              ></button
-            >
-            <button id="btn-dl-svg" class="outline"
-              ><Icon name="download" />
-              <span data-i18n="downloadSvg"
-                >{lang === "ja" ? "SVG 保存" : "Save SVG"}</span
-              ></button
-            >
-            <button id="btn-share" class="outline"
-              ><Icon name="share" />
-              <span data-i18n="shareLabel"
-                >{lang === "ja" ? "共有 URL" : "Share URL"}</span
-              ></button
-            >
-          </div>
-        </div>
+      <!-- Floating meta-actions (char.manpuc.me pattern) -->
+      <div class="fab-row">
+        <button type="button" id="btn-clear" class="fab-circle" aria-label={ja ? "入力を消去" : "Clear input"} title={ja ? "消去" : "Clear"}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+        </button>
+        <button type="button" id="btn-share" class="fab-circle" aria-label={ja ? "設定URLを共有" : "Share settings link"} title={ja ? "共有" : "Share"}>
+          <Icon name="share" />
+        </button>
+        <button type="button" id="btn-dl-svg" class="fab-circle fab-text" aria-label={ja ? "SVGで保存" : "Save SVG"} title="SVG">SVG</button>
+        <button type="button" id="btn-dl-png" class="fab-pill">
+          <span class="fab-pill-label">{ja ? "PNGで保存" : "Save PNG"}</span>
+          <Icon name="download" />
+        </button>
       </div>
     </main>
-
-    <section class="card hidden" id="history-section" style="margin-top:20px;">
-      <h2>
-        <Icon name="history" />
-        <span data-i18n="historyTitle"
-          >{lang === "ja" ? "履歴" : "History"}</span
-        >
-      </h2>
-      <div id="history-list" class="history-grid"></div>
-    </section>
-
-    <!-- SEO Content Section -->
-    <section class="card content-section" style="margin-top: 40px;">
-      <h2 data-i18n="aboutTitle">{tr({ja: "QRメーカーについて", en: "About QR Maker", zh: "关于 QR 生成器", es: "Sobre QR Maker"})}</h2>
-      <p data-i18n="aboutText">
-        {tr({
-          ja: "QRメーカーは、デザイン性に優れたQRコードをブラウザ上で簡単に作成できる無料ツールです。登録不要で、作成したデータがサーバーに送信されることはありません。完全にプライバシーに配慮したオフライン対応の設計となっています。",
-          en: "QR Maker is a free web tool that allows you to easily create stylish QR codes directly in your browser. No registration is required, and your data is never sent to a server. It is a privacy-first, offline-capable application.",
-          zh: "QR 生成器是一款免费的在线工具，可让您直接在浏览器中轻松创建时尚的二维码。无需注册，您的数据不会发送到服务器。这是一款注重隐私、支持离线使用的应用。",
-          es: "QR Maker es una herramienta web gratuita que te permite crear fácilmente códigos QR elegantes directamente en tu navegador. No requiere registro y tus datos nunca se envían a un servidor. Es una aplicación que prioriza la privacidad y funciona sin conexión.",
-        })}
-      </p>
-
-      <div class="content-grid">
-        <div class="content-item">
-          <h3 data-i18n="featuresTitle">{tr({ja: "主な特徴", en: "Key Features", zh: "主要特点", es: "Características principales"})}</h3>
-          <ul>
-            <li data-i18n="featureEmoji">{tr({ja: "絵文字埋め込み: QRコードの中央にお好みの絵文字を配置できます。", en: "Emoji Integration: Place your favorite emoji in the center of the QR code.", zh: "表情嵌入：将您喜欢的表情放置在二维码中心。", es: "Integración de emoji: Coloca tu emoji favorito en el centro del código QR."})}</li>
-            <li data-i18n="featureDesign">{tr({ja: "自由なデザイン: ドットの形状（四角、丸、角丸）や色を自由に変更可能。", en: "Custom Design: Change dot styles (square, dots, rounded) and colors freely.", zh: "自定义设计：自由更改点样式（方形、圆点、圆角）和颜色。", es: "Diseño personalizado: Cambia estilos de puntos y colores libremente."})}</li>
-            <li data-i18n="featureExport">{tr({ja: "高品質書き出し: PNG形式だけでなく、拡大してもボケないSVG形式に対応。", en: "High-Quality Export: Supports both PNG and scalable SVG formats.", zh: "高质量导出：支持 PNG 和可缩放的 SVG 格式。", es: "Exportación de alta calidad: Compatible con formatos PNG y SVG escalable."})}</li>
-            <li data-i18n="featurePrivacy">{tr({ja: "プライバシー保護: データの入出力はすべてお使いのデバイス上で行われます。", en: "Privacy First: All processing happens locally on your device.", zh: "隐私优先：所有处理都在您的设备上本地完成。", es: "Privacidad primero: Todo el procesamiento se realiza localmente en tu dispositivo."})}</li>
-          </ul>
-        </div>
-        <div class="content-item">
-          <h3 data-i18n="tipsTitle">{tr({ja: "作成のヒント", en: "Pro Tips", zh: "使用技巧", es: "Consejos"})}</h3>
-          <p data-i18n="tipsText">
-            {tr({
-              ja: "QRコードの読み取り精度を保つため、前景色と背景色のコントラストを十分に確保することをお勧めします。本ツールには自動読み取りチェック機能が搭載されており、デザインが読み取りにくい場合は警告が表示されます。",
-              en: "To ensure readability, maintain high contrast between the foreground and background colors. This tool includes a real-time readability checker to warn you if your design might be hard to scan.",
-              zh: "为确保可读性，请保持前景色和背景色之间的高对比度。此工具包含实时可读性检查器，当您的设计可能难以扫描时会发出警告。",
-              es: "Para garantizar la legibilidad, mantén un alto contraste entre los colores de primer plano y fondo. Esta herramienta incluye un verificador de legibilidad en tiempo real.",
-            })}
-          </p>
-        </div>
-      </div>
-    </section>
-
-    <div style="text-align: center; margin-top: 40px; margin-bottom: 20px;">
-      <a
-        href="https://manpuc.me"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="branded-footer-link"
-      >
-        Developed with ❤️ by manpuc
-      </a>
-    </div>
   </div>
 
   <script src="../scripts/main.ts"></script>
 </Layout>
 
 <style>
-  /* Reuse styles from index.astro */
-  .app-header {
+  .page {
+    flex: 1;
+    width: 100%;
     display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 32px;
+    justify-content: center;
   }
-  .branded-footer-link {
-    font-size: 0.85rem;
-    color: var(--color-text-muted);
-    opacity: 0.5;
-    transition:
-      opacity 0.3s ease,
-      color 0.3s ease,
-      transform 0.3s ease;
-    text-decoration: none;
-    display: inline-block;
-  }
-  .branded-footer-link:hover {
-    opacity: 1;
-    color: var(--color-text);
-    transform: scale(1.03);
-  }
-  .page-icon {
-    width: 2.2rem;
-    height: 2.2rem;
-    display: block;
-    object-fit: contain;
-    flex-shrink: 0;
-  }
-  .app-title {
-    font-size: 2rem;
-    font-weight: 700;
-    margin: 0;
-    line-height: 1.2;
+
+  .studio {
+    width: 100%;
+    max-width: 680px;
+    min-height: 100dvh;
+    position: relative;
+    padding: 2.5rem 1.25rem 7.5rem;
     display: flex;
-    align-items: center;
-    letter-spacing: -0.02em;
-  }
-  .grid-layout {
-    display: flex;
-    gap: 24px;
     flex-direction: column;
+    gap: 1.75rem;
   }
-  @media (min-width: 768px) {
-    .grid-layout {
-      flex-direction: row;
-      align-items: flex-start;
-    }
-    .config-col {
-      flex: 1.2;
-    }
-    .preview-col {
-      flex: 1;
+
+  @media (min-width: 640px) {
+    .studio {
+      padding: 3rem 1.5rem 8rem;
+      gap: 2rem;
     }
   }
-  .grid-2col {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
   }
-  .alert {
-    margin-top: 24px;
-    padding: 14px 20px;
-    border-radius: var(--radius-md);
-    font-size: 0.95rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    text-align: left;
+
+  /* Hero input */
+  .input-area {
+    width: 100%;
+  }
+
+  .hero-input {
+    width: 100%;
+    min-height: 2.25rem;
+    font-family: var(--font-sans);
+    font-size: 1.5rem;
+    font-weight: 500;
     line-height: 1.4;
-    white-space: pre-line;
-    transition: all var(--transition-bounce);
-    animation: slideDown 0.6s var(--spring-bounce);
+    color: var(--foreground);
+    background: transparent;
+    border: none;
+    outline: none;
+    resize: none;
+    padding: 0;
+    caret-color: var(--foreground);
+    field-sizing: content;
+    overflow: hidden;
   }
-  .alert .inline-icon {
+  .hero-input::placeholder {
+    color: var(--muted-foreground);
+    opacity: 0.4;
+  }
+  @media (min-width: 640px) {
+    .hero-input {
+      font-size: 1.75rem;
+      min-height: 2.5rem;
+    }
+  }
+
+  .note {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted-foreground);
+    margin-top: 0.5rem;
+  }
+
+  /* Preview */
+  .preview-area {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  .preview-sticky {
+    width: 100%;
+    max-width: 320px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .qr-holder {
+    aspect-ratio: 1 / 1;
+    width: 100%;
+    max-width: 320px;
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
-  }
-  @keyframes slideDown {
-    0% {
-      opacity: 0;
-      transform: translateY(-20px) scale(0.95);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
-  }
-  .alert.safe {
-    background-color: var(--color-success);
-    color: #ffffff;
-  }
-  .alert.warning {
-    background-color: var(--color-warning);
-    color: #000000;
-  }
-  .alert.danger {
-    background-color: var(--color-danger);
-    color: #ffffff;
-  }
-
-  .history-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 12px;
-    margin-top: 20px;
-  }
-  @media (min-width: 600px) {
-    .history-grid {
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    }
-  }
-
-  /* Content Section Styles */
-  .content-section h2 {
-    font-size: 1.5rem;
-    margin-bottom: 16px;
-    color: var(--color-text);
-  }
-  .content-section p {
-    line-height: 1.6;
-    color: var(--color-text-muted);
-    margin-bottom: 24px;
-  }
-  .content-grid {
-    display: grid;
-    gap: 24px;
-    grid-template-columns: 1fr;
-  }
-  @media (min-width: 768px) {
-    .content-grid {
-      grid-template-columns: 1fr 1fr;
-    }
-  }
-  .content-item h3 {
-    font-size: 1.1rem;
-    margin-bottom: 12px;
-    color: var(--color-text);
-  }
-  .content-item ul {
-    list-style: none;
-    padding: 0;
-  }
-  .content-item li {
-    margin-bottom: 8px;
-    padding-left: 20px;
+    overflow: hidden;
     position: relative;
-    color: var(--color-text-muted);
+    border-radius: 10px;
+    background-color: transparent;
+    box-shadow: 0 0 0 1px var(--border), 0 8px 30px -4px rgba(0, 0, 0, 0.12);
+    transition: border-radius var(--transition-fast), box-shadow var(--transition-fast);
   }
-  .content-item li::before {
-    content: "•";
-    position: absolute;
-    left: 0;
-    color: var(--color-accent);
-    font-weight: bold;
+  :global(.dark) .qr-holder {
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12), 0 12px 36px -4px rgba(0, 0, 0, 0.6);
+  }
+  .qr-holder :global(svg),
+  .qr-holder :global(img),
+  .qr-holder :global(canvas) {
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
+    aspect-ratio: 1 / 1;
+  }
+
+  .qr-loading {
+    opacity: 0.2;
+    font-size: 1.5rem;
+  }
+
+  /* Readability: smooth fade without vertical layout jump */
+  .contrast-banner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.5;
+    min-height: 1.25rem;
+    transition: opacity var(--transition-fast);
+  }
+  .contrast-banner.safe {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .contrast-banner.warning {
+    opacity: 1;
+    color: var(--color-warning);
+  }
+  .contrast-banner.danger {
+    opacity: 1;
+    color: var(--color-danger);
+  }
+  .banner-icon { flex-shrink: 0; margin-top: 1px; }
+
+  /* Options */
+  .options {
+    width: 100%;
+  }
+
+  .options-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+  }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.25rem 1.5rem;
+  }
+  @media (min-width: 520px) {
+    .grid-2 { grid-template-columns: 1fr 1fr; }
+  }
+
+  .slider {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .slider-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .val {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    color: var(--foreground);
+  }
+
+  .color-row,
+  .center-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.25rem;
+  }
+
+  .swatch {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+  }
+  .swatch input[type="color"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 9999px;
+    background: none;
+    cursor: pointer;
+    overflow: hidden;
+  }
+  .swatch input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+  .swatch input[type="color"]::-webkit-color-swatch { border: none; border-radius: 9999px; }
+  .swatch input[type="color"]::-moz-color-swatch { border: none; border-radius: 9999px; }
+
+  .hex {
+    width: 7ch;
+    border: none;
+    background: transparent;
+    outline: none;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    text-transform: uppercase;
+    color: var(--foreground);
+  }
+  .hex:focus-visible { text-decoration: underline; text-underline-offset: 4px; }
+
+  .emoji-input {
+    width: 4.5rem;
+    text-align: center;
+  }
+
+  /* History */
+  .history-details {
+    width: 100%;
+  }
+  .history-summary {
+    list-style: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    user-select: none;
+    padding: 0.5rem 0;
+  }
+  .history-summary::-webkit-details-marker { display: none; }
+  .history-summary .chev {
+    color: var(--muted-foreground);
+    transition: transform var(--transition-fast), color var(--transition-fast);
+  }
+  .history-summary:hover .label,
+  .history-summary:hover .chev,
+  .history-details[open] .label,
+  .history-details[open] .chev {
+    color: var(--foreground);
+  }
+  .history-details[open] .chev {
+    transform: rotate(180deg);
+  }
+  .history-list-box {
+    display: flex;
+    flex-direction: column;
+    padding-top: 0.5rem;
+  }
+
+  /* Floating meta-actions (fixed to bottom right, dynamically avoids footer) */
+  .fab-row {
+    position: fixed;
+    right: 1.25rem;
+    bottom: 2rem;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  @media (min-width: 640px) {
+    .fab-row { right: 1.5rem; }
+  }
+
+  .fab-circle,
+  .fab-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 3rem;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: background-color var(--transition-fast), opacity var(--transition-fast), transform var(--transition-fast);
+  }
+  .fab-circle:active,
+  .fab-pill:active { transform: scale(0.96); }
+  .fab-circle:focus-visible,
+  .fab-pill:focus-visible { outline: 1px solid var(--foreground); outline-offset: 2px; }
+
+  .fab-circle {
+    width: 3rem;
+    background: var(--background);
+    color: var(--foreground);
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    font-size: 16px;
+  }
+  .fab-circle:hover { background: var(--muted); }
+
+  .fab-text {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+  }
+
+  .fab-pill {
+    gap: 0.75rem;
+    width: 3rem;
+    padding: 0;
+    background: var(--foreground);
+    color: var(--background);
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    font-size: 16px;
+  }
+  .fab-pill:hover { opacity: 0.9; }
+  .fab-pill-label {
+    display: none;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  @media (min-width: 640px) {
+    .fab-pill { width: auto; padding: 0 1.5rem; }
+    .fab-pill-label { display: inline; }
   }
 </style>

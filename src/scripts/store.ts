@@ -25,7 +25,7 @@ export interface AppState {
 const defaultState: AppState = {
   data: 'https://qr.manpuc.me/',
   size: 256,
-  margin: 10,
+  margin: 5,
   fgColor: '#000000',
   bgColor: '#ffffff',
   transparentBg: false,
@@ -39,7 +39,7 @@ const defaultState: AppState = {
   errorCorrection: 'M',
   theme: 'auto',
   language: 'ja',
-  qrRadius: 12,
+  qrRadius: 10,
 };
 
 type Listener = (state: AppState) => void;
@@ -54,9 +54,16 @@ class Store {
 
   load() {
     try {
-      const saved = localStorage.getItem('qr_maker_state_v1');
+      const saved = localStorage.getItem('qr_maker_state_v2');
       if (saved) {
         const parsed = JSON.parse(saved);
+        // Migrate legacy px values to percentage
+        if (typeof parsed.margin === 'number' && parsed.margin > 25) {
+          parsed.margin = 5;
+        }
+        if (typeof parsed.qrRadius === 'number' && parsed.qrRadius > 100) {
+          parsed.qrRadius = 10;
+        }
         this.state = { ...this.state, ...parsed };
       }
 
@@ -95,7 +102,7 @@ class Store {
 
   save() {
     try {
-      localStorage.setItem('qr_maker_state_v1', JSON.stringify({
+      localStorage.setItem('qr_maker_state_v2', JSON.stringify({
         data: this.state.data,
         size: this.state.size,
         margin: this.state.margin,
