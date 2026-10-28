@@ -34,6 +34,28 @@
 
   /* Motion */
   --transition-fast: 150ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Radii */
+  --rounded-sm: 4px;
+  --rounded-md: 8px;
+  --rounded-qr-frame: 12px;
+  --rounded-pill: 9999px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --transition-fast: 0ms;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+
+  .qr-loading {
+    animation: none !important;
+  }
 }
 
 .dark,
@@ -328,8 +350,9 @@ body {
 }
 
 /* Slider (Matching registry/new-york/slider.tsx) */
-/* Monolith spec: relative h-1 w-full rounded-none bg-border track, block h-4 w-4 rounded-full border border-black bg-primary thumb */
+/* Monolith spec: relative h-1 w-full rounded-none bg-border track, absolute h-full bg-foreground range, block h-4 w-4 rounded-full border border-black bg-primary thumb */
 .monolith-slider-wrap {
+  position: relative;
   width: 100%;
   display: flex;
   align-items: center;
@@ -337,15 +360,34 @@ body {
 }
 
 .monolith-range-slider {
+  --slider-progress: 0%;
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
   height: 4px; /* Monolith h-1 (4px) */
-  background: var(--border);
-  border-radius: 0;
+  border-radius: 0; /* Monolith rounded-none */
   outline: none;
   cursor: pointer;
   margin: 0;
+  background: linear-gradient(
+    to right,
+    var(--foreground) 0%,
+    var(--foreground) var(--slider-progress),
+    var(--border) var(--slider-progress),
+    var(--border) 100%
+  );
+  transition: background 40ms linear;
+}
+
+.monolith-range-slider:focus-visible {
+  outline: none;
+}
+
+.monolith-range-slider::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 4px;
+  border-radius: 0;
+  background: transparent;
 }
 
 .monolith-range-slider::-webkit-slider-thumb {
@@ -355,15 +397,37 @@ body {
   height: 1rem;
   border-radius: 9999px; /* rounded-full */
   background-color: var(--primary);
-  border: 1px solid var(--foreground);
+  border: 1px solid #000000;
   box-shadow: none;
+  margin-top: -6px; /* (4px - 16px) / 2 = -6px centers thumb on track */
   cursor: pointer;
-  transition: border-color var(--transition-fast);
+  transition: border-color var(--transition-fast), transform 100ms ease-out, box-shadow var(--transition-fast);
 }
 
-.monolith-range-slider::-webkit-slider-thumb:hover,
+.monolith-range-slider::-webkit-slider-thumb:hover {
+  border-color: var(--foreground);
+}
+
 .monolith-range-slider:focus-visible::-webkit-slider-thumb {
   border-color: var(--foreground);
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 3px var(--foreground);
+}
+
+.monolith-range-slider:active::-webkit-slider-thumb {
+  transform: scale(1.1);
+}
+
+.monolith-range-slider::-moz-range-track {
+  width: 100%;
+  height: 4px;
+  border-radius: 0;
+  background-color: var(--border);
+}
+
+.monolith-range-slider::-moz-range-progress {
+  height: 4px;
+  border-radius: 0;
+  background-color: var(--foreground);
 }
 
 .monolith-range-slider::-moz-range-thumb {
@@ -371,9 +435,29 @@ body {
   height: 1rem;
   border-radius: 9999px;
   background-color: var(--primary);
-  border: 1px solid var(--foreground);
+  border: 1px solid #000000;
   box-shadow: none;
   cursor: pointer;
+  transition: border-color var(--transition-fast), transform 100ms ease-out, box-shadow var(--transition-fast);
+}
+
+.monolith-range-slider::-moz-range-thumb:hover {
+  border-color: var(--foreground);
+}
+
+.monolith-range-slider:focus-visible::-moz-range-thumb {
+  border-color: var(--foreground);
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 3px var(--foreground);
+}
+
+.monolith-range-slider:active::-moz-range-thumb {
+  transform: scale(1.1);
+}
+
+.dark .monolith-range-slider::-webkit-slider-thumb,
+.dark .monolith-range-slider::-moz-range-thumb {
+  background-color: #ffffff;
+  border: 1px solid #000000;
 }
 
 /* Checker pattern for transparent QR preview */
@@ -408,7 +492,7 @@ body {
   border-bottom: 1px solid var(--border);
   cursor: pointer;
   transition: background-color var(--transition-fast);
-  border-radius: 6px;
+  border-radius: var(--rounded-md);
 }
 
 .history-item:hover {
@@ -418,9 +502,9 @@ body {
 .history-preview-mini {
   width: 44px;
   height: 44px;
-  background-color: var(--card);
+  background-color: var(--card, var(--accent));
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--rounded-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -496,7 +580,7 @@ body {
 }
 
 .history-icon-btn.history-item-delete:hover {
-  background-color: rgba(239, 68, 68, 0.12);
+  background-color: color-mix(in srgb, var(--color-danger) 12%, transparent);
   color: var(--color-danger);
 }
 

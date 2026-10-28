@@ -1,0 +1,208 @@
+---
+interface Props {
+  id: string;
+  min?: number | string;
+  max?: number | string;
+  step?: number | string;
+  value?: number | string;
+  className?: string;
+  label?: string;
+  ariaLabel?: string;
+  ariaLabelledby?: string;
+}
+
+const {
+  id,
+  min = 0,
+  max = 100,
+  step = 1,
+  value = 0,
+  className = "",
+  label,
+  ariaLabel,
+  ariaLabelledby,
+} = Astro.props;
+
+const resolvedAriaLabel = ariaLabel || label;
+---
+
+<div class={`monolith-slider-wrap ${className}`}>
+  <input
+    type="range"
+    id={id}
+    class="monolith-range-slider"
+    min={min}
+    max={max}
+    step={step}
+    value={value}
+    aria-label={resolvedAriaLabel}
+    aria-labelledby={ariaLabelledby}
+  />
+</div>
+
+<script>
+  function setupMonolithSliders() {
+    document.querySelectorAll<HTMLInputElement>('.monolith-range-slider').forEach((slider) => {
+      if ((slider as any).__monolith_slider_init) return;
+      (slider as any).__monolith_slider_init = true;
+
+      function updateProgress() {
+        const min = parseFloat(slider.min) || 0;
+        const max = parseFloat(slider.max) || 100;
+        const val = parseFloat(slider.value) || 0;
+        const percent = max > min ? Math.max(0, Math.min(100, ((val - min) / (max - min)) * 100)) : 0;
+        slider.style.setProperty('--slider-progress', `${percent}%`);
+      }
+
+      // Initial progress update
+      updateProgress();
+
+      // Drag/Input updates
+      slider.addEventListener('input', updateProgress);
+      slider.addEventListener('change', updateProgress);
+
+      // Intercept direct programmatic property assignment: slider.value = ...
+      const originalValueDescriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+      if (originalValueDescriptor && originalValueDescriptor.set) {
+        const origSet = originalValueDescriptor.set;
+        Object.defineProperty(slider, 'value', {
+          set(val) {
+            origSet.call(this, val);
+            updateProgress();
+          },
+          get() {
+            return originalValueDescriptor.get?.call(this);
+          },
+          configurable: true,
+        });
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupMonolithSliders);
+  } else {
+    setupMonolithSliders();
+  }
+</script>
+
+<style>
+  /* Monolith Slider Root Wrap (matching ui.manpuc.me Slider Root) */
+  .monolith-slider-wrap {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0;
+  }
+
+  /* Monolith Slider Track & Range
+     Track: relative h-1 w-full grow overflow-hidden rounded-none bg-border
+     Range: absolute h-full bg-foreground
+  */
+  .monolith-range-slider {
+    --slider-progress: 0%;
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px; /* Monolith h-1 (4px) */
+    border-radius: 0; /* Monolith rounded-none */
+    outline: none;
+    cursor: pointer;
+    margin: 0;
+    background: linear-gradient(
+      to right,
+      var(--foreground) 0%,
+      var(--foreground) var(--slider-progress),
+      var(--border) var(--slider-progress),
+      var(--border) 100%
+    );
+    transition: background 40ms linear;
+  }
+
+  .monolith-range-slider:focus-visible {
+    outline: none;
+  }
+
+  /* WebKit Track */
+  .monolith-range-slider::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 4px;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  /* WebKit Thumb
+     Matching ui.manpuc.me: block h-4 w-4 rounded-full border border-black bg-primary shadow-none transition-colors duration-[150ms] ease-out outline-none hover:border-foreground focus-visible:border-foreground
+  */
+  .monolith-range-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 1rem; /* 16px (h-4 w-4) */
+    height: 1rem;
+    border-radius: 9999px; /* rounded-full */
+    background-color: var(--primary);
+    border: 1px solid #000000;
+    box-shadow: none;
+    margin-top: -6px; /* (4px - 16px) / 2 = -6px centers thumb on track */
+    cursor: pointer;
+    transition: border-color var(--transition-fast), transform 100ms ease-out, box-shadow var(--transition-fast);
+  }
+
+  .monolith-range-slider::-webkit-slider-thumb:hover {
+    border-color: var(--foreground);
+  }
+
+  .monolith-range-slider:focus-visible::-webkit-slider-thumb {
+    border-color: var(--foreground);
+    box-shadow: 0 0 0 2px var(--background), 0 0 0 3px var(--foreground);
+  }
+
+  .monolith-range-slider:active::-webkit-slider-thumb {
+    transform: scale(1.1);
+  }
+
+  /* Firefox Track & Range Progress */
+  .monolith-range-slider::-moz-range-track {
+    width: 100%;
+    height: 4px;
+    border-radius: 0;
+    background-color: var(--border);
+  }
+
+  .monolith-range-slider::-moz-range-progress {
+    height: 4px;
+    border-radius: 0;
+    background-color: var(--foreground);
+  }
+
+  .monolith-range-slider::-moz-range-thumb {
+    width: 1rem;
+    height: 1rem;
+    border-radius: 9999px;
+    background-color: var(--primary);
+    border: 1px solid #000000;
+    box-shadow: none;
+    cursor: pointer;
+    transition: border-color var(--transition-fast), transform 100ms ease-out, box-shadow var(--transition-fast);
+  }
+
+  .monolith-range-slider::-moz-range-thumb:hover {
+    border-color: var(--foreground);
+  }
+
+  .monolith-range-slider:focus-visible::-moz-range-thumb {
+    border-color: var(--foreground);
+    box-shadow: 0 0 0 2px var(--background), 0 0 0 3px var(--foreground);
+  }
+
+  .monolith-range-slider:active::-moz-range-thumb {
+    transform: scale(1.1);
+  }
+
+  :global(.dark) .monolith-range-slider::-webkit-slider-thumb,
+  :global(.dark) .monolith-range-slider::-moz-range-thumb {
+    background-color: #ffffff;
+    border: 1px solid #000000;
+  }
+</style>

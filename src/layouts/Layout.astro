@@ -48,13 +48,28 @@ const { lang, title, description, noindex } = Astro.props;
     </div>
 
     <script>
-      // Load PWA virtual module
-      try {
-        // @ts-ignore
-        import("virtual:pwa-register").then(({ registerSW }) => {
-          registerSW({ immediate: true });
-        });
-      } catch (e) {}
+      // In development or when requested, cleanly unregister service workers to avoid stale bundles
+      if (import.meta.env.DEV) {
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then((registrations) => {
+            for (const registration of registrations) {
+              registration.unregister();
+            }
+          });
+        }
+        if ('caches' in window) {
+          caches.keys().then((keys) => {
+            keys.forEach((key) => caches.delete(key));
+          });
+        }
+      } else {
+        try {
+          // @ts-ignore
+          import("virtual:pwa-register").then(({ registerSW }) => {
+            registerSW({ immediate: true });
+          });
+        } catch (e) {}
+      }
     </script>
     <!-- Cloudflare Web Analytics -->
     <script

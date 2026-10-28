@@ -23,6 +23,8 @@ function debounceRender(immediate = false) {
 // Elements
 const el = {
   data: document.getElementById('input-data') as HTMLTextAreaElement,
+  inputContainer: document.getElementById('input-container') as HTMLElement,
+  btnInputClear: document.getElementById('btn-input-clear') as HTMLButtonElement,
   size: document.getElementById('input-size') as HTMLSelectElement,
   margin: document.getElementById('input-margin') as HTMLInputElement,
   ec: document.getElementById('input-ec') as HTMLSelectElement,
@@ -231,19 +233,46 @@ function autoResizeTextarea() {
   }
 }
 
+function updateClearBtnVisibility() {
+  if (!el.btnInputClear) return;
+  if (el.data.value && el.data.value.length > 0) {
+    el.btnInputClear.classList.remove('hidden');
+  } else {
+    el.btnInputClear.classList.add('hidden');
+  }
+}
+
 function bindEvents() {
+  // Input container click to focus
+  el.inputContainer?.addEventListener('click', (e) => {
+    if ((e.target as HTMLElement).closest('#btn-input-clear')) return;
+    el.data.focus();
+  });
+
   // Text area
   el.data.addEventListener('input', (e) => {
     autoResizeTextarea();
+    updateClearBtnVisibility();
     const val = (e.target as HTMLTextAreaElement).value;
     store.update({ data: val || 'https://qr.manpuc.me/' }, true);
     debounceRender();
   });
 
-  // Clear button
+  // Inline clear button
+  el.btnInputClear?.addEventListener('click', () => {
+    el.data.value = '';
+    autoResizeTextarea();
+    updateClearBtnVisibility();
+    store.update({ data: 'https://qr.manpuc.me/' }, true);
+    debounceRender();
+    el.data.focus();
+  });
+
+  // Clear button (FAB)
   el.btnClear?.addEventListener('click', () => {
     el.data.value = '';
     autoResizeTextarea();
+    updateClearBtnVisibility();
     store.update({ data: 'https://qr.manpuc.me/' }, true);
     debounceRender();
   });
@@ -304,17 +333,41 @@ function bindEvents() {
   });
 
   // Colors
+  const openColorPicker = (colorInput: HTMLInputElement) => {
+    if ('showPicker' in HTMLInputElement.prototype) {
+      try {
+        colorInput.showPicker();
+        return;
+      } catch (err) {
+        // Fallback to click if showPicker is blocked
+      }
+    }
+    colorInput.click();
+  };
+
   el.fg.addEventListener('input', (e) => {
     const val = (e.target as HTMLInputElement).value;
     el.fgText.value = val;
     store.update({ fgColor: val }, true);
     debounceRender();
   });
+  el.fgText.addEventListener('input', (e) => {
+    let val = (e.target as HTMLInputElement).value;
+    if (!val.startsWith('#')) val = '#' + val;
+    if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+      el.fg.value = val;
+      store.update({ fgColor: val }, true);
+      debounceRender();
+    }
+  });
   el.fgText.addEventListener('change', (e) => {
     let val = (e.target as HTMLInputElement).value;
     if (!val.startsWith('#')) val = '#' + val;
     el.fg.value = val;
     store.update({ fgColor: val });
+  });
+  el.fgText.addEventListener('click', () => {
+    openColorPicker(el.fg);
   });
 
   el.bg.addEventListener('input', (e) => {
@@ -323,15 +376,33 @@ function bindEvents() {
     store.update({ bgColor: val }, true);
     debounceRender();
   });
+  el.bgText.addEventListener('input', (e) => {
+    let val = (e.target as HTMLInputElement).value;
+    if (!val.startsWith('#')) val = '#' + val;
+    if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+      el.bg.value = val;
+      store.update({ bgColor: val }, true);
+      debounceRender();
+    }
+  });
   el.bgText.addEventListener('change', (e) => {
     let val = (e.target as HTMLInputElement).value;
     if (!val.startsWith('#')) val = '#' + val;
     el.bg.value = val;
     store.update({ bgColor: val });
   });
+  el.bgText.addEventListener('click', () => {
+    openColorPicker(el.bg);
+  });
 
   el.trans.addEventListener('change', (e) => {
     store.update({ transparentBg: (e.target as HTMLInputElement).checked });
+  });
+
+  el.margin.addEventListener('input', (e) => {
+    const val = parseInt((e.target as HTMLInputElement).value) || 0;
+    store.update({ margin: val }, true);
+    debounceRender();
   });
 
   el.qrRadius.addEventListener('input', (e) => {
@@ -392,6 +463,7 @@ function updateFormFromState() {
   const state = store.state;
   el.data.value = state.data === 'https://qr.manpuc.me/' ? '' : state.data;
   autoResizeTextarea();
+  updateClearBtnVisibility();
   el.size.value = state.size.toString();
   el.margin.value = state.margin.toString();
   el.ec.value = state.errorCorrection;
@@ -437,10 +509,23 @@ function updateFormFromState() {
   }
 }
 
+function escapeHtml(str: string): string {
+  return str.replace(/[&<>"']/g, (c) => {
+    switch (c) {
+      case '&': return '&amp;';
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      case '"': return '&quot;';
+      case "'": return '&#39;';
+      default: return c;
+    }
+  });
+}
+
 function getHistoryPreviewSrc(svg: string): string {
   if (!svg) return '';
   const trimmed = svg.trim();
-  if (trimmed.startsWith('data:image/')) {
+  if (trimmed.startsWith('data:image/svg+xml') || trimmed.startsWith('data:image/png')) {
     return trimmed;
   }
   if (trimmed.startsWith('<svg')) {
@@ -450,7 +535,7 @@ function getHistoryPreviewSrc(svg: string): string {
     }
     return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(clean);
   }
-  return trimmed;
+  return '';
 }
 
 function renderHistory() {
@@ -480,23 +565,19 @@ function renderHistory() {
     const previewSrc = getHistoryPreviewSrc(item.svg);
 
     div.innerHTML = `
-      <div class="history-preview-mini">
-        ${previewSrc ? `<img src="${previewSrc}" alt="" loading="lazy" />` : `
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.25"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 7h.01"/><path d="M17 7h.01"/><path d="M7 17h.01"/><path d="M17 17h.01"/></svg>
-        `}
-      </div>
+      <div class="history-preview-mini"></div>
       <div class="history-item-content">
-        <div class="history-item-date">${date}</div>
-        <div class="history-item-data">${displayData}</div>
+        <div class="history-item-date"></div>
+        <div class="history-item-data"></div>
       </div>
       <div class="history-actions">
-        <button type="button" class="history-icon-btn load-btn" data-id="${item.id}" title="${reuseTitle}" aria-label="${reuseTitle}">
+        <button type="button" class="history-icon-btn load-btn" data-id="${escapeHtml(item.id)}" title="${escapeHtml(reuseTitle)}" aria-label="${escapeHtml(reuseTitle)}">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
             <path d="M3 3v5h5"/>
           </svg>
         </button>
-        <button type="button" class="history-icon-btn history-item-delete" data-id="${item.id}" title="${deleteTitle}" aria-label="${deleteTitle}">
+        <button type="button" class="history-icon-btn history-item-delete" data-id="${escapeHtml(item.id)}" title="${escapeHtml(deleteTitle)}" aria-label="${escapeHtml(deleteTitle)}">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M3 6h18"/>
             <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
@@ -505,6 +586,23 @@ function renderHistory() {
         </button>
       </div>
     `;
+
+    const previewContainer = div.querySelector('.history-preview-mini') as HTMLElement;
+    if (previewSrc) {
+      const img = document.createElement('img');
+      img.src = previewSrc;
+      img.alt = '';
+      img.loading = 'lazy';
+      previewContainer.appendChild(img);
+    } else {
+      previewContainer.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.25"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 7h.01"/><path d="M17 7h.01"/><path d="M7 17h.01"/><path d="M17 17h.01"/></svg>';
+    }
+
+    const dateEl = div.querySelector('.history-item-date') as HTMLElement;
+    if (dateEl) dateEl.textContent = date;
+
+    const dataEl = div.querySelector('.history-item-data') as HTMLElement;
+    if (dataEl) dataEl.textContent = displayData;
 
     div.addEventListener('click', (e) => {
       const target = e.target as HTMLElement;
@@ -538,6 +636,12 @@ function initFabFooterAvoidance() {
 
   let ticking = false;
   const update = () => {
+    if (window.matchMedia('(min-width: 520px)').matches) {
+      fab.style.bottom = '';
+      ticking = false;
+      return;
+    }
+
     const footerTop = footer.getBoundingClientRect().top;
     const windowHeight = window.innerHeight;
     const baseOffset = 32; // 2rem = 32px

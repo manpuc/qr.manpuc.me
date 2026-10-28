@@ -2,6 +2,7 @@
 import Layout from "../layouts/Layout.astro";
 import Icon from "../components/Icon.astro";
 import Select from "../components/Select.astro";
+import Slider from "../components/Slider.astro";
 
 export function getStaticPaths() {
   return [
@@ -38,7 +39,187 @@ const pageText: Record<string, { title: string; description: string }> = {
 const pt = pageText[lang] || pageText.en;
 const title = pt.title;
 const description = pt.description;
-const ja = lang === "ja";
+
+const uiText: Record<string, Record<string, string>> = {
+  ja: {
+    contentLabel: "URL / テキスト",
+    placeholderText: "https://... またはテキストを入力",
+    clearLabel: "入力をクリア",
+    preview: "プレビュー",
+    dots: "ドット",
+    dotStyleAria: "ドットの形状",
+    color: "色",
+    fgColor: "前景色",
+    bgColor: "背景色",
+    fgPickerAria: "前景色カラーピッカー",
+    bgPickerAria: "背景色カラーピッカー",
+    transparent: "背景を透過",
+    center: "中央",
+    centerModeAria: "中央の表示モード",
+    none: "なし",
+    emoji: "絵文字",
+    text: "テキスト",
+    centerTextAria: "中央の文字",
+    emojiWarning: "絵文字モードは絵文字1文字向けです。",
+    size: "サイズ",
+    emojiSizeAria: "絵文字のサイズ",
+    hue: "色相",
+    emojiHueAria: "絵文字の色相",
+    font: "フォント",
+    fontAria: "中央文字のフォント",
+    weight: "太さ",
+    weightAria: "中央文字の太さ",
+    advanced: "詳細",
+    ec: "誤り訂正",
+    ecAria: "誤り訂正レベル",
+    resolution: "解像度",
+    margin: "余白",
+    cornerRadius: "角丸",
+    cornerRadiusAria: "QRコードの角丸",
+    clear: "消去",
+    clearAria: "入力を消去",
+    share: "共有",
+    shareAria: "設定URLを共有",
+    saveSvgAria: "SVGで保存",
+    savePng: "PNGで保存",
+    history: "履歴",
+    textWarning: "日本語などのマルチバイト文字は、読み取り機器によって文字化けすることがあります。",
+  },
+  en: {
+    contentLabel: "URL / Text",
+    placeholderText: "https://... or enter text",
+    clearLabel: "Clear input",
+    preview: "Preview",
+    dots: "Dots",
+    dotStyleAria: "Dot style",
+    color: "Color",
+    fgColor: "Foreground",
+    bgColor: "Background",
+    fgPickerAria: "Foreground color picker",
+    bgPickerAria: "Background color picker",
+    transparent: "Transparent",
+    center: "Center",
+    centerModeAria: "Center display mode",
+    none: "None",
+    emoji: "Emoji",
+    text: "Text",
+    centerTextAria: "Center text",
+    emojiWarning: "Emoji mode works best with a single emoji.",
+    size: "Size",
+    emojiSizeAria: "Emoji size",
+    hue: "Hue",
+    emojiHueAria: "Emoji hue",
+    font: "Font",
+    fontAria: "Center text font",
+    weight: "Weight",
+    weightAria: "Center text font weight",
+    advanced: "Advanced",
+    ec: "Error correction",
+    ecAria: "Error correction level",
+    resolution: "Resolution",
+    margin: "Margin",
+    cornerRadius: "Corner radius",
+    cornerRadiusAria: "QR corner radius",
+    clear: "Clear",
+    clearAria: "Clear input",
+    share: "Share",
+    shareAria: "Share settings link",
+    saveSvgAria: "Save SVG",
+    savePng: "Save PNG",
+    history: "History",
+    textWarning: "Multi-byte characters may show garbled on some readers.",
+  },
+  zh: {
+    contentLabel: "网址 / 文本",
+    placeholderText: "https://... 或输入文本",
+    clearLabel: "清空输入",
+    preview: "预览",
+    dots: "点阵",
+    dotStyleAria: "点阵样式",
+    color: "颜色",
+    fgColor: "前景色",
+    bgColor: "背景色",
+    fgPickerAria: "前景色拾色器",
+    bgPickerAria: "背景色拾色器",
+    transparent: "背景透明",
+    center: "中心",
+    centerModeAria: "中心显示模式",
+    none: "无",
+    emoji: "表情",
+    text: "文本",
+    centerTextAria: "中心文字",
+    emojiWarning: "表情模式建议仅使用单个表情。",
+    size: "大小",
+    emojiSizeAria: "表情大小",
+    hue: "色相",
+    emojiHueAria: "表情色相",
+    font: "字体",
+    fontAria: "中心文字字体",
+    weight: "粗细",
+    weightAria: "中心文字粗细",
+    advanced: "高级设置",
+    ec: "容错级别",
+    ecAria: "容错级别",
+    resolution: "分辨率",
+    margin: "边距",
+    cornerRadius: "圆角",
+    cornerRadiusAria: "二维码圆角",
+    clear: "清空",
+    clearAria: "清空输入",
+    share: "分享",
+    shareAria: "分享配置链接",
+    saveSvgAria: "保存为 SVG",
+    savePng: "保存为 PNG",
+    history: "历史记录",
+    textWarning: "部分扫描设备可能会对多字节字符出现乱码。",
+  },
+  es: {
+    contentLabel: "URL / Texto",
+    placeholderText: "https://... o escribe un texto",
+    clearLabel: "Borrar entrada",
+    preview: "Vista previa",
+    dots: "Puntos",
+    dotStyleAria: "Estilo de puntos",
+    color: "Color",
+    fgColor: "Primer plano",
+    bgColor: "Fondo",
+    fgPickerAria: "Selector de color de primer plano",
+    bgPickerAria: "Selector de color de fondo",
+    transparent: "Fondo transparente",
+    center: "Centro",
+    centerModeAria: "Modo de visualización central",
+    none: "Ninguno",
+    emoji: "Emoji",
+    text: "Texto",
+    centerTextAria: "Texto central",
+    emojiWarning: "El modo emoji funciona mejor con un solo emoji.",
+    size: "Tamaño",
+    emojiSizeAria: "Tamaño del emoji",
+    hue: "Tono",
+    emojiHueAria: "Tono del emoji",
+    font: "Fuente",
+    fontAria: "Fuente del texto central",
+    weight: "Grosor",
+    weightAria: "Grosor del texto central",
+    advanced: "Avanzado",
+    ec: "Corrección de errores",
+    ecAria: "Nivel de corrección de errores",
+    resolution: "Resolución",
+    margin: "Margen",
+    cornerRadius: "Radio de esquinas",
+    cornerRadiusAria: "Radio de esquinas del código QR",
+    clear: "Borrar",
+    clearAria: "Borrar entrada",
+    share: "Compartir",
+    shareAria: "Compartir enlace de configuración",
+    saveSvgAria: "Guardar SVG",
+    savePng: "Guardar PNG",
+    history: "Historial",
+    textWarning: "Los caracteres multibyte pueden aparecer distorsionados en algunos lectores.",
+  },
+};
+
+const u = uiText[lang] || uiText.en;
 ---
 
 <Layout title={title} description={description} lang={lang}>
@@ -47,7 +228,7 @@ const ja = lang === "ja";
       <h1 class="sr-only">QR MAKER</h1>
 
       <!-- QR preview -->
-      <section class="preview-area" aria-label={ja ? "プレビュー" : "Preview"}>
+      <section class="preview-area" aria-label={u.preview}>
         <div class="preview-sticky">
           <div id="qr-preview" class="qr-holder">
             <div class="qr-loading"><Icon name="rotate" /></div>
@@ -60,18 +241,34 @@ const ja = lang === "ja";
       </section>
 
       <!-- URL / Text input (below QR) -->
-      <section class="input-area">
-        <label for="input-data" class="sr-only">{ja ? "URL またはテキスト" : "URL or text"}</label>
-        <textarea
-          id="input-data"
-          placeholder={ja ? "URL やテキストを入力" : "Type a URL or text"}
-          class="hero-input"
-          rows="1"
-          spellcheck="false"
-          autocomplete="off"
-        ></textarea>
+      <section class="field input-field" aria-label={u.contentLabel}>
+        <div class="input-header">
+          <label for="input-data" class="label">{u.contentLabel}</label>
+        </div>
+        <div class="input-container" id="input-container">
+          <textarea
+            id="input-data"
+            placeholder={u.placeholderText}
+            class="hero-input"
+            rows="1"
+            spellcheck="false"
+            autocomplete="off"
+          ></textarea>
+          <button
+            type="button"
+            id="btn-input-clear"
+            class="input-clear-btn hidden"
+            aria-label={u.clearLabel}
+            title={u.clearLabel}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
         <p id="text-warning" class="note hidden">
-          {ja ? "日本語などのマルチバイト文字は、読み取り機器によって文字化けすることがあります。" : "Multi-byte characters may show garbled on some readers."}
+          {u.textWarning}
         </p>
       </section>
 
@@ -79,8 +276,8 @@ const ja = lang === "ja";
       <section class="options">
         <div class="options-body">
           <div class="field">
-            <span class="label">{ja ? "ドット" : "Dots"}</span>
-            <div class="monolith-radio-group">
+            <span class="label">{u.dots}</span>
+            <div class="monolith-radio-group" role="radiogroup" aria-label={u.dotStyleAria}>
               <label class="monolith-radio-item">
                 <input type="radio" name="dotStyle" value="square" />
                 <div class="monolith-radio-box"><div class="monolith-radio-dot"></div></div>
@@ -105,48 +302,48 @@ const ja = lang === "ja";
           </div>
 
           <div class="field">
-            <span class="label">{ja ? "色" : "Color"}</span>
+            <span class="label">{u.color}</span>
             <div class="color-row">
-              <label class="swatch" title={ja ? "前景色" : "Foreground"}>
-                <input type="color" id="input-fg" value="#000000" />
-                <input type="text" id="input-fg-text" value="#000000" maxlength="7" spellcheck="false" class="hex" aria-label={ja ? "前景色" : "Foreground"} />
+              <label class="swatch" title={u.fgColor}>
+                <input type="color" id="input-fg" value="#000000" aria-label={u.fgPickerAria} />
+                <input type="text" id="input-fg-text" value="#000000" maxlength="7" spellcheck="false" class="hex" aria-label={u.fgColor} />
               </label>
-              <label class="swatch" title={ja ? "背景色" : "Background"}>
-                <input type="color" id="input-bg" value="#ffffff" />
-                <input type="text" id="input-bg-text" value="#ffffff" maxlength="7" spellcheck="false" class="hex" aria-label={ja ? "背景色" : "Background"} />
+              <label class="swatch" title={u.bgColor}>
+                <input type="color" id="input-bg" value="#ffffff" aria-label={u.bgPickerAria} />
+                <input type="text" id="input-bg-text" value="#ffffff" maxlength="7" spellcheck="false" class="hex" aria-label={u.bgColor} />
               </label>
               <label class="monolith-checkbox-label">
                 <input type="checkbox" id="input-transparent" />
                 <div class="monolith-checkbox-box">
                   <svg class="monolith-checkbox-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                 </div>
-                <span>{ja ? "背景を透過" : "Transparent"}</span>
+                <span>{u.transparent}</span>
               </label>
             </div>
           </div>
 
           <div class="field">
-            <span class="label">{ja ? "中央" : "Center"}</span>
+            <span class="label">{u.center}</span>
             <div class="center-row">
-              <div class="monolith-radio-group">
+              <div class="monolith-radio-group" role="radiogroup" aria-label={u.centerModeAria}>
                 <label class="monolith-radio-item">
                   <input type="radio" name="emojiMode" value="none" checked />
                   <div class="monolith-radio-box"><div class="monolith-radio-dot"></div></div>
-                  <span>{ja ? "なし" : "None"}</span>
+                  <span>{u.none}</span>
                 </label>
                 <label class="monolith-radio-item">
                   <input type="radio" name="emojiMode" value="image" />
                   <div class="monolith-radio-box"><div class="monolith-radio-dot"></div></div>
-                  <span>{ja ? "絵文字" : "Emoji"}</span>
+                  <span>{u.emoji}</span>
                 </label>
                 <label class="monolith-radio-item">
                   <input type="radio" name="emojiMode" value="text" />
                   <div class="monolith-radio-box"><div class="monolith-radio-dot"></div></div>
-                  <span>{ja ? "テキスト" : "Text"}</span>
+                  <span>{u.text}</span>
                 </label>
               </div>
               <div id="emoji-input-wrap" class="hidden">
-                <input type="text" id="input-emoji" value="🌟" class="monolith-input emoji-input" maxlength="50" aria-label={ja ? "中央の文字" : "Center text"} />
+                <input type="text" id="input-emoji" value="🌟" class="monolith-input emoji-input" maxlength="50" aria-label={u.centerTextAria} />
               </div>
             </div>
             <select id="input-emoji-mode" class="hidden" aria-hidden="true" tabindex="-1">
@@ -155,24 +352,25 @@ const ja = lang === "ja";
               <option value="text">Text</option>
             </select>
             <p id="emoji-warning" class="note hidden">
-              {ja ? "絵文字モードは絵文字1文字向けです。" : "Emoji mode works best with a single emoji."}
+              {u.emojiWarning}
             </p>
 
             <div id="emoji-common-controls" class="grid-2 hidden">
               <div class="slider" id="emoji-size-wrap">
-                <div class="slider-head"><span class="label">{ja ? "サイズ" : "Size"}</span><span id="val-emoji-size" class="val">40%</span></div>
-                <div class="monolith-slider-wrap"><input type="range" id="input-emoji-size" class="monolith-range-slider" min="10" max="50" value="40" /></div>
+                <div class="slider-head"><span class="label">{u.size}</span><span id="val-emoji-size" class="val">40%</span></div>
+                <Slider id="input-emoji-size" min="10" max="50" value="40" ariaLabel={u.emojiSizeAria} />
               </div>
               <div class="slider hidden" id="emoji-hue-wrap">
-                <div class="slider-head"><span class="label">{ja ? "色相" : "Hue"}</span><span id="val-emoji-hue" class="val">0°</span></div>
-                <div class="monolith-slider-wrap"><input type="range" id="input-emoji-hue" class="monolith-range-slider" min="0" max="360" value="0" /></div>
+                <div class="slider-head"><span class="label">{u.hue}</span><span id="val-emoji-hue" class="val">0°</span></div>
+                <Slider id="input-emoji-hue" min="0" max="360" value="0" ariaLabel={u.emojiHueAria} />
               </div>
             </div>
             <div id="emoji-text-controls" class="grid-2 hidden">
               <div class="slider" id="emoji-font-wrap">
-                <span class="label">{ja ? "フォント" : "Font"}</span>
+                <span class="label">{u.font}</span>
                 <Select
                   id="input-emoji-font"
+                  ariaLabel={u.fontAria}
                   options={[
                     { value: "sans-serif", label: "Sans-serif", selected: true },
                     { value: "serif", label: "Serif" },
@@ -183,19 +381,20 @@ const ja = lang === "ja";
                 />
               </div>
               <div class="slider" id="emoji-weight-wrap">
-                <div class="slider-head"><span class="label">{ja ? "太さ" : "Weight"}</span><span id="val-emoji-weight" class="val">700</span></div>
-                <div class="monolith-slider-wrap"><input type="range" id="input-emoji-weight" class="monolith-range-slider" min="100" max="900" step="100" value="700" /></div>
+                <div class="slider-head"><span class="label">{u.weight}</span><span id="val-emoji-weight" class="val">700</span></div>
+                <Slider id="input-emoji-weight" min="100" max="900" step="100" value="700" ariaLabel={u.weightAria} />
               </div>
             </div>
           </div>
 
           <div class="field">
-            <span class="label">{ja ? "詳細" : "Advanced"}</span>
+            <span class="label">{u.advanced}</span>
             <div class="grid-2">
               <div class="slider">
-                <span class="label">{ja ? "誤り訂正" : "Error correction"}</span>
+                <span class="label">{u.ec}</span>
                 <Select
                   id="input-ec"
+                  ariaLabel={u.ecAria}
                   options={[
                     { value: "L", label: "L · 7%" },
                     { value: "M", label: "M · 15%", selected: true },
@@ -205,9 +404,10 @@ const ja = lang === "ja";
                 />
               </div>
               <div class="slider">
-                <div class="slider-head"><span class="label">{ja ? "解像度" : "Resolution"}</span><span id="label-size" class="val">256px</span></div>
+                <div class="slider-head"><span class="label">{u.resolution}</span><span id="label-size" class="val">256px</span></div>
                 <Select
                   id="input-size"
+                  ariaLabel={u.resolution}
                   options={[
                     { value: "128", label: "128 × 128" },
                     { value: "256", label: "256 × 256", selected: true },
@@ -217,41 +417,41 @@ const ja = lang === "ja";
                 />
               </div>
               <div class="slider">
-                <div class="slider-head"><span class="label">{ja ? "余白" : "Margin"}</span><span id="label-margin" class="val">5%</span></div>
-                <div class="monolith-slider-wrap"><input type="range" id="input-margin" class="monolith-range-slider" min="0" max="25" value="5" /></div>
+                <div class="slider-head"><span class="label">{u.margin}</span><span id="label-margin" class="val">5%</span></div>
+                <Slider id="input-margin" min="0" max="25" value="5" ariaLabel={u.margin} />
               </div>
               <div class="slider">
-                <div class="slider-head"><span class="label">{ja ? "角丸" : "Corner radius"}</span><span id="val-qr-radius" class="val">10%</span></div>
-                <div class="monolith-slider-wrap"><input type="range" id="input-qr-radius" class="monolith-range-slider" min="0" max="100" value="10" /></div>
+                <div class="slider-head"><span class="label">{u.cornerRadius}</span><span id="val-qr-radius" class="val">10%</span></div>
+                <Slider id="input-qr-radius" min="0" max="100" value="10" ariaLabel={u.cornerRadiusAria} />
               </div>
             </div>
           </div>
         </div>
       </section>
 
+      <!-- Floating / Inline Actions (Download, Share, Clear) -->
+      <div class="fab-row">
+        <button type="button" id="btn-clear" class="fab-circle" aria-label={u.clearAria} title={u.clear}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+        </button>
+        <button type="button" id="btn-share" class="fab-circle" aria-label={u.shareAria} title={u.share}>
+          <Icon name="share" />
+        </button>
+        <button type="button" id="btn-dl-svg" class="fab-circle fab-text" aria-label={u.saveSvgAria} title="SVG">SVG</button>
+        <button type="button" id="btn-dl-png" class="fab-pill">
+          <span class="fab-pill-label">{u.savePng}</span>
+          <Icon name="download" />
+        </button>
+      </div>
+
       <!-- History (collapsible) -->
       <details id="history-section" class="history-details" style="display: none;">
         <summary class="history-summary">
-          <span class="label">{ja ? "履歴" : "History"}</span>
+          <span class="label">{u.history}</span>
           <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
         </summary>
         <div id="history-list" class="history-list-box"></div>
       </details>
-
-      <!-- Floating meta-actions (char.manpuc.me pattern) -->
-      <div class="fab-row">
-        <button type="button" id="btn-clear" class="fab-circle" aria-label={ja ? "入力を消去" : "Clear input"} title={ja ? "消去" : "Clear"}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-        </button>
-        <button type="button" id="btn-share" class="fab-circle" aria-label={ja ? "設定URLを共有" : "Share settings link"} title={ja ? "共有" : "Share"}>
-          <Icon name="share" />
-        </button>
-        <button type="button" id="btn-dl-svg" class="fab-circle fab-text" aria-label={ja ? "SVGで保存" : "Save SVG"} title="SVG">SVG</button>
-        <button type="button" id="btn-dl-png" class="fab-pill">
-          <span class="fab-pill-label">{ja ? "PNGで保存" : "Save PNG"}</span>
-          <Icon name="download" />
-        </button>
-      </div>
     </main>
   </div>
 
@@ -268,19 +468,19 @@ const ja = lang === "ja";
 
   .studio {
     width: 100%;
-    max-width: 680px;
+    max-width: 640px;
     min-height: 100dvh;
     position: relative;
     padding: 2.5rem 1.25rem 7.5rem;
     display: flex;
     flex-direction: column;
-    gap: 1.75rem;
+    gap: 0;
   }
 
-  @media (min-width: 640px) {
+  @media (min-width: 520px) {
     .studio {
-      padding: 3rem 1.5rem 8rem;
-      gap: 2rem;
+      padding: 3.5rem 2rem 5rem;
+      gap: 0;
     }
   }
 
@@ -293,18 +493,59 @@ const ja = lang === "ja";
     white-space: nowrap;
   }
 
-  /* Hero input */
-  .input-area {
+  /* URL / Content Input */
+  .input-field {
     width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 2.75rem;
+  }
+  @media (min-width: 520px) {
+    .input-field {
+      margin-bottom: 3.25rem;
+    }
   }
 
-  .hero-input {
+  .input-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
     width: 100%;
-    min-height: 2.25rem;
+    padding: 0.25rem 0 0.875rem;
+    border: none;
+    border-bottom: 1px solid var(--border-input);
+    background-color: transparent;
+    transition: border-bottom-color var(--transition-fast);
+    cursor: text;
+  }
+
+  .input-container:hover {
+    border-bottom-color: var(--muted-foreground);
+  }
+
+  .input-container:focus-within {
+    border-bottom-color: var(--foreground);
+    background-color: transparent;
+    box-shadow: none;
+  }
+
+
+  .hero-input {
+    flex: 1;
+    min-height: 1.75rem;
     font-family: var(--font-sans);
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     font-weight: 500;
     line-height: 1.4;
+    letter-spacing: -0.01em;
     color: var(--foreground);
     background: transparent;
     border: none;
@@ -315,15 +556,45 @@ const ja = lang === "ja";
     field-sizing: content;
     overflow: hidden;
   }
+
   .hero-input::placeholder {
     color: var(--muted-foreground);
-    opacity: 0.4;
+    opacity: 0.5;
   }
+
   @media (min-width: 640px) {
     .hero-input {
-      font-size: 1.75rem;
-      min-height: 2.5rem;
+      font-size: 1.5rem;
     }
+  }
+
+  .input-clear-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: none;
+    background: transparent;
+    color: var(--muted-foreground);
+    cursor: pointer;
+    border-radius: 9999px;
+    flex-shrink: 0;
+    padding: 0;
+    transition: color var(--transition-fast), background-color var(--transition-fast), transform var(--transition-fast);
+  }
+
+  .input-clear-btn:hover {
+    color: var(--foreground);
+    background-color: var(--border);
+  }
+
+  .input-clear-btn:active {
+    transform: scale(0.9);
+  }
+
+  .input-clear-btn.hidden {
+    display: none;
   }
 
   .note {
@@ -338,6 +609,12 @@ const ja = lang === "ja";
     width: 100%;
     display: flex;
     justify-content: center;
+    margin-bottom: 2.25rem;
+  }
+  @media (min-width: 520px) {
+    .preview-area {
+      margin-bottom: 2.75rem;
+    }
   }
 
   .preview-sticky {
@@ -346,7 +623,7 @@ const ja = lang === "ja";
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.875rem;
   }
 
   .qr-holder {
@@ -358,7 +635,7 @@ const ja = lang === "ja";
     justify-content: center;
     overflow: hidden;
     position: relative;
-    border-radius: 10px;
+    border-radius: var(--rounded-qr-frame, 12px);
     background-color: transparent;
     box-shadow: 0 0 0 1px var(--border), 0 8px 30px -4px rgba(0, 0, 0, 0.12);
     transition: border-radius var(--transition-fast), box-shadow var(--transition-fast);
@@ -409,25 +686,36 @@ const ja = lang === "ja";
   /* Options */
   .options {
     width: 100%;
+    margin-bottom: 2.25rem;
+  }
+  @media (min-width: 520px) {
+    .options {
+      margin-bottom: 2.75rem;
+    }
   }
 
   .options-body {
     display: flex;
     flex-direction: column;
-    gap: 1.75rem;
+    gap: 2rem;
+  }
+  @media (min-width: 640px) {
+    .options-body {
+      gap: 2.25rem;
+    }
   }
 
   .field {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.875rem;
   }
 
   .label {
     font-family: var(--font-mono);
     font-size: 11px;
-    font-weight: 400;
-    letter-spacing: 0.1em;
+    font-weight: 500;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--muted-foreground);
   }
@@ -435,7 +723,7 @@ const ja = lang === "ja";
   .grid-2 {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 1.25rem 1.5rem;
+    gap: 1.5rem 2rem;
   }
   @media (min-width: 520px) {
     .grid-2 { grid-template-columns: 1fr 1fr; }
@@ -444,7 +732,7 @@ const ja = lang === "ja";
   .slider {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.625rem;
   }
   .slider-head {
     display: flex;
@@ -497,8 +785,19 @@ const ja = lang === "ja";
     font-size: 12px;
     text-transform: uppercase;
     color: var(--foreground);
+    cursor: pointer;
+    transition: opacity var(--transition-fast);
   }
-  .hex:focus-visible { text-decoration: underline; text-underline-offset: 4px; }
+  .hex:hover {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  .hex:focus,
+  .hex:focus-visible {
+    cursor: text;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
 
   .emoji-input {
     width: 4.5rem;
@@ -538,7 +837,7 @@ const ja = lang === "ja";
     padding-top: 0.5rem;
   }
 
-  /* Floating meta-actions (fixed to bottom right, dynamically avoids footer) */
+  /* Actions (Download, Share, Clear) */
   .fab-row {
     position: fixed;
     right: 1.25rem;
@@ -548,8 +847,16 @@ const ja = lang === "ja";
     align-items: center;
     gap: 0.75rem;
   }
-  @media (min-width: 640px) {
-    .fab-row { right: 1.5rem; }
+  @media (min-width: 520px) {
+    .fab-row {
+      position: static;
+      right: auto;
+      bottom: auto;
+      z-index: auto;
+      width: 100%;
+      justify-content: flex-end;
+      padding: 0.75rem 0 0.25rem;
+    }
   }
 
   .fab-circle,
@@ -573,7 +880,6 @@ const ja = lang === "ja";
     color: var(--foreground);
     border: 1px solid var(--border);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-    font-size: 16px;
   }
   .fab-circle:hover { background: var(--muted); }
 
@@ -592,7 +898,6 @@ const ja = lang === "ja";
     color: var(--background);
     border: none;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    font-size: 16px;
   }
   .fab-pill:hover { opacity: 0.9; }
   .fab-pill-label {

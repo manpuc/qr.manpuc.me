@@ -247,7 +247,13 @@ export async function generateQR(state: AppState, container: HTMLElement): Promi
     // Synchronously serialize SVG for history thumbnail - ensures xmlns for valid image decoding
     if (svg) {
       let svgStr = serializeSvg(svg, state.size);
-      return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
+      const fullSvgStr = '<?xml version="1.0" standalone="no"?>\r\n' + svgStr;
+      const svgDataUri = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(fullSvgStr);
+      // Pre-render PNG blob asynchronously so clicking "PNG 保存" downloads 100% synchronously
+      svgToPngBlob(svgStr, state.size).then((blob) => {
+        cachedPngBlob = blob;
+      }).catch(() => {});
+      return svgDataUri;
     }
     return '';
   } catch (err) {
@@ -255,6 +261,8 @@ export async function generateQR(state: AppState, container: HTMLElement): Promi
     return '';
   }
 }
+
+let cachedPngBlob: Blob | null = null;
 
 export function serializeSvg(svg: SVGSVGElement, size: number): string {
   const clone = svg.cloneNode(true) as SVGSVGElement;
@@ -270,70 +278,132 @@ export function serializeSvg(svg: SVGSVGElement, size: number): string {
   return new XMLSerializer().serializeToString(clone);
 }
 
-export async function svgToPngBlob(svgStr: string, size: number): Promise<Blob> {
+export function svgToPngBlob(svgStr: string, size: number): Promise<Blob> {
   return new Promise((resolve, reject) => {
-    const svgBlob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
-    const url = URL.createObjectURL(svgBlob);
+    const dataUri = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
     const img = new Image();
+    img.crossOrigin = 'anonymous';
     img.onload = () => {
       const canvas = document.createElement('canvas');
       canvas.width = size;
       canvas.height = size;
       const ctx = canvas.getContext('2d');
       if (!ctx) {
-        URL.revokeObjectURL(url);
         return reject(new Error('Canvas 2D context not available'));
       }
       ctx.clearRect(0, 0, size, size);
       ctx.drawImage(img, 0, 0, size, size);
-      URL.revokeObjectURL(url);
       canvas.toBlob((blob) => {
         if (blob) resolve(blob);
         else reject(new Error('Canvas toBlob failed'));
       }, 'image/png');
     };
     img.onerror = (e) => {
-      URL.revokeObjectURL(url);
       reject(e);
     };
-    img.src = url;
+    img.src = dataUri;
   });
 }
 
 export async function getRawBlob(ext: 'png' | 'svg'): Promise<Blob | null> {
   const preview = document.getElementById('qr-preview');
-  if (!preview) return null;
-  const svg = preview.querySelector('svg');
-  if (!svg) return null;
+  const svg = preview?.querySelector('svg');
 
-  const size = store.state.size;
-  const svgStr = serializeSvg(svg, size);
+  if (svg) {
+    const size = store.state.size || 256;
+    const svgStr = serializeSvg(svg, size);
 
-  if (ext === 'svg') {
-    return new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
-  } else {
-    try {
-      return await svgToPngBlob(svgStr, size);
-    } catch (err) {
-      console.error('Failed to export PNG from SVG:', err);
-      if (qrCode) return await qrCode.getRawData('png');
-      return null;
+    if (ext === 'svg') {
+      const fullSvgStr = '<?xml version="1.0" standalone="no"?>\r\n' + svgStr;
+      return new Blob([fullSvgStr], { type: 'image/svg+xml;charset=utf-8' });
+    } else {
+      try {
+        return await svgToPngBlob(svgStr, size);
+      } catch (err) {
+        console.warn('Canvas export failed, falling back to qrCode.getRawData:', err);
+      }
     }
   }
+
+  if (qrCode) {
+    return await qrCode.getRawData(ext);
+  }
+  return null;
+}
+
+export function downloadBlob(blob: Blob, filename: string) {
+  // Wrap binary in standard File object so Chromium registers filename metadata in its internal blob store
+  let file: File;
+  try {
+    file = new File([blob], filename, { type: blob.type || 'application/octet-stream' });
+  } catch (e) {
+    file = blob as any;
+  }
+
+  const url = URL.createObjectURL(file);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.setAttribute('download', filename);
+  a.rel = 'noopener';
+  a.style.display = 'none';
+  document.body.appendChild(a);
+
+  // Synchronous click within user gesture
+  a.click();
+
+  // Safely clean up DOM element after download starts, and retain the Object URL
+  // for 2 minutes so Chrome's download manager has plenty of time to finish streaming
+  setTimeout(() => {
+    if (a.parentNode) {
+      a.parentNode.removeChild(a);
+    }
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 120000);
+  }, 500);
 }
 
 export async function downloadQR(state: AppState, ext: 'png' | 'svg', _sizeMultiplier: number = 1) {
-  const blob = await getRawBlob(ext);
-  if (!blob) return;
+  const filename = `qrmaker-${Date.now()}.${ext}`;
 
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `qrmaker-${Date.now()}.${ext}`;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => {
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }, 200);
+  if (ext === 'svg') {
+    const preview = document.getElementById('qr-preview');
+    const svg = preview?.querySelector('svg');
+    if (svg) {
+      const size = store.state.size || 256;
+      const svgStr = serializeSvg(svg, size);
+      const fullSvgStr = '<?xml version="1.0" standalone="no"?>\r\n' + svgStr;
+      const blob = new Blob([fullSvgStr], { type: 'image/svg+xml;charset=utf-8' });
+      downloadBlob(blob, filename);
+      return;
+    }
+  } else {
+    // If pre-rendered PNG blob is ready, download 100% synchronously within the click event
+    if (cachedPngBlob) {
+      downloadBlob(cachedPngBlob, filename);
+      return;
+    }
+
+    const preview = document.getElementById('qr-preview');
+    const svg = preview?.querySelector('svg');
+    if (svg) {
+      const size = store.state.size || 256;
+      const svgStr = serializeSvg(svg, size);
+      try {
+        const blob = await svgToPngBlob(svgStr, size);
+        cachedPngBlob = blob;
+        downloadBlob(blob, filename);
+        return;
+      } catch (err) {
+        console.warn('PNG generation failed:', err);
+      }
+    }
+  }
+
+  // Fallback if needed
+  const blob = await getRawBlob(ext);
+  if (blob) {
+    downloadBlob(blob, filename);
+  }
 }

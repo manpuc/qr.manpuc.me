@@ -20,7 +20,7 @@ export default defineConfig({
     }),
     astroPwa({
       registerType: 'autoUpdate',
-      includeAssets: ['fav-128.ico', 'favicon.svg'],
+      includeAssets: ['favicon.ico', 'favicon.svg'],
       manifest: {
         name: 'QRメーカー',
         short_name: 'QR maker',

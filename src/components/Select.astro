@@ -10,16 +10,20 @@ interface Props {
   options: Option[];
   value?: string;
   className?: string;
+  label?: string;
+  ariaLabel?: string;
+  ariaLabelledby?: string;
 }
 
-const { id, options, value: selectedValue, className = "" } = Astro.props;
+const { id, options, value: selectedValue, className = "", label, ariaLabel, ariaLabelledby } = Astro.props;
+const resolvedAriaLabel = ariaLabel || label;
 
 const currentSelected = options.find((o) => (selectedValue ? o.value === selectedValue : o.selected)) || options[0];
 ---
 
 <div class={`monolith-select-root ${className}`} data-select-id={id}>
-  <!-- Accessible Native Hidden Select for FormData and store sync -->
-  <select id={id} class="sr-only-select" tabindex="-1" aria-hidden="true">
+  <!-- Accessible Native Hidden Select for FormData and programmatic state sync -->
+  <select id={id} class="sr-only-select" tabindex="-1" aria-hidden="true" aria-label={resolvedAriaLabel} aria-labelledby={ariaLabelledby}>
     {options.map((opt) => (
       <option value={opt.value} selected={opt.value === currentSelected?.value}>
         {opt.label}
@@ -34,6 +38,8 @@ const currentSelected = options.find((o) => (selectedValue ? o.value === selecte
     data-slot="select-trigger"
     aria-haspopup="listbox"
     aria-expanded="false"
+    aria-label={resolvedAriaLabel}
+    aria-labelledby={ariaLabelledby}
   >
     <span class="monolith-select-value" data-slot="select-value">
       {currentSelected?.label}
@@ -45,13 +51,20 @@ const currentSelected = options.find((o) => (selectedValue ? o.value === selecte
     </span>
   </button>
 
-  <!-- Monolith SelectContent (Dropdown Popup matching radix-ui/Monolith styling) -->
+  <!-- Monolith SelectContent (Dropdown matching ui.manpuc.me / Radix Select) -->
   <div
-    class="monolith-select-content hidden"
+    class="monolith-select-content"
     data-slot="select-content"
     role="listbox"
+    tabindex="-1"
+    aria-hidden="true"
+    aria-label={resolvedAriaLabel}
+    aria-labelledby={ariaLabelledby}
   >
     <div class="monolith-select-viewport">
+      <!-- Animated sliding highlight directly matching ui.manpuc.me SelectHighlight -->
+      <div class="monolith-select-highlight" aria-hidden="true"></div>
+
       {options.map((opt) => {
         const isItemActive = opt.value === currentSelected?.value;
         return (
@@ -61,12 +74,12 @@ const currentSelected = options.find((o) => (selectedValue ? o.value === selecte
             data-value={opt.value}
             role="option"
             aria-selected={isItemActive ? "true" : "false"}
-            tabindex="0"
+            tabindex="-1"
           >
             <span class="monolith-select-item-text">{opt.label}</span>
             <span class="monolith-select-item-indicator" data-slot="select-item-indicator">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="20 6 9 17 4 12" />
+                <path d="M20 6 9 17l-5-5" />
               </svg>
             </span>
           </div>
@@ -77,51 +90,150 @@ const currentSelected = options.find((o) => (selectedValue ? o.value === selecte
 </div>
 
 <script>
-  // Setup custom select behavior matching Radix / Monolith
-  document.querySelectorAll<HTMLElement>('.monolith-select-root').forEach((root) => {
-    const trigger = root.querySelector<HTMLButtonElement>('.monolith-select-trigger');
-    const content = root.querySelector<HTMLElement>('.monolith-select-content');
-    const valueDisplay = root.querySelector<HTMLElement>('.monolith-select-value');
-    const nativeSelect = root.querySelector<HTMLSelectElement>('.sr-only-select');
-    const items = root.querySelectorAll<HTMLElement>('.monolith-select-item');
+  // Setup custom select behavior matching Monolith UI (ui.manpuc.me) & Radix UI
+  function setupMonolithSelects() {
+    document.querySelectorAll<HTMLElement>('.monolith-select-root').forEach((root) => {
+      // Prevent duplicate initialization
+      if ((root as any).__monolith_initialized) return;
+      (root as any).__monolith_initialized = true;
 
-    if (!trigger || !content || !nativeSelect || !valueDisplay) return;
+      const rawTrigger = root.querySelector<HTMLButtonElement>('.monolith-select-trigger');
+      const rawContent = root.querySelector<HTMLElement>('.monolith-select-content');
+      const rawViewport = root.querySelector<HTMLElement>('.monolith-select-viewport');
+      const rawHighlight = root.querySelector<HTMLElement>('.monolith-select-highlight');
+      const rawValueDisplay = root.querySelector<HTMLElement>('.monolith-select-value');
+      const rawNativeSelect = root.querySelector<HTMLSelectElement>('.sr-only-select');
+      const items = Array.from(root.querySelectorAll<HTMLElement>('.monolith-select-item'));
 
-    function close() {
-      content.classList.add('hidden');
-      trigger.setAttribute('aria-expanded', 'false');
-    }
+      if (!rawTrigger || !rawContent || !rawNativeSelect || !rawValueDisplay || !rawViewport || !rawHighlight) return;
 
-    function open() {
-      // Close other selects first
-      document.querySelectorAll('.monolith-select-content').forEach((c) => {
-        if (c !== content) c.classList.add('hidden');
-      });
-      document.querySelectorAll('.monolith-select-trigger').forEach((t) => {
-        if (t !== trigger) t.setAttribute('aria-expanded', 'false');
-      });
+      const trigger = rawTrigger;
+      const content = rawContent;
+      const viewport = rawViewport;
+      const highlight = rawHighlight;
+      const valueDisplay = rawValueDisplay;
+      const nativeSelect = rawNativeSelect;
 
-      content.classList.remove('hidden');
-      trigger.setAttribute('aria-expanded', 'true');
-    }
+      let highlightedIndex = -1;
+      let hideHighlightTimeout: ReturnType<typeof setTimeout> | null = null;
 
-    trigger.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const isExpanded = trigger.getAttribute('aria-expanded') === 'true';
-      if (isExpanded) {
-        close();
-      } else {
-        open();
+      // Update sliding highlight position
+      function updateHighlight(index: number, immediate = false) {
+        if (hideHighlightTimeout) {
+          clearTimeout(hideHighlightTimeout);
+          hideHighlightTimeout = null;
+        }
+
+        const item = items[index];
+        if (!item) {
+          hideHighlightTimeout = setTimeout(() => {
+            highlight.style.opacity = '0';
+          }, 40);
+          return;
+        }
+
+        const parentRect = viewport.getBoundingClientRect();
+        const itemRect = item.getBoundingClientRect();
+        const top = itemRect.top - parentRect.top + viewport.scrollTop;
+
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (immediate || prefersReducedMotion) {
+          highlight.style.transition = 'none';
+        } else {
+          highlight.style.transition = 'transform 150ms ease-out, height 150ms ease-out, opacity 100ms ease-out';
+        }
+
+        highlight.style.opacity = '1';
+        highlight.style.transform = `translateY(${top}px)`;
+        highlight.style.height = `${itemRect.height}px`;
+
+        if (immediate && !prefersReducedMotion) {
+          // Re-enable transition on next frame
+          requestAnimationFrame(() => {
+            highlight.style.transition = '';
+          });
+        }
       }
-    });
 
-    items.forEach((item) => {
-      item.addEventListener('click', (e) => {
-        e.stopPropagation();
+      function setHighlighted(index: number, scrollToView = false) {
+        if (index < 0 || index >= items.length) {
+          index = -1;
+        }
+        highlightedIndex = index;
+
+        items.forEach((item, i) => {
+          if (i === index) {
+            item.setAttribute('data-highlighted', 'true');
+            if (scrollToView) {
+              item.scrollIntoView({ block: 'nearest' });
+            }
+          } else {
+            item.removeAttribute('data-highlighted');
+          }
+        });
+
+        if (index >= 0) {
+          updateHighlight(index);
+        } else {
+          updateHighlight(-1);
+        }
+      }
+
+      function positionContent() {
+        // Collision detection: open upwards if too close to viewport bottom
+        const triggerRect = trigger.getBoundingClientRect();
+        const contentHeight = content.offsetHeight || 200;
+        const spaceBelow = window.innerHeight - triggerRect.bottom;
+        const spaceAbove = triggerRect.top;
+
+        if (spaceBelow < contentHeight + 10 && spaceAbove > spaceBelow) {
+          content.classList.add('open-upward');
+        } else {
+          content.classList.remove('open-upward');
+        }
+      }
+
+      function open() {
+        // Close other open selects
+        document.querySelectorAll<HTMLElement>('.monolith-select-root').forEach((otherRoot) => {
+          if (otherRoot !== root) {
+            const otherTrigger = otherRoot.querySelector<HTMLButtonElement>('.monolith-select-trigger');
+            const otherContent = otherRoot.querySelector<HTMLElement>('.monolith-select-content');
+            if (otherTrigger && otherContent) {
+              otherContent.classList.remove('is-open');
+              otherContent.setAttribute('aria-hidden', 'true');
+              otherTrigger.setAttribute('aria-expanded', 'false');
+            }
+          }
+        });
+
+        positionContent();
+        content.classList.add('is-open');
+        content.setAttribute('aria-hidden', 'false');
+        trigger.setAttribute('aria-expanded', 'true');
+
+        // Initial highlight on currently selected item
+        const selectedIdx = items.findIndex((it) => it.classList.contains('is-selected'));
+        const targetIdx = selectedIdx >= 0 ? selectedIdx : 0;
+        setHighlighted(targetIdx, true);
+        updateHighlight(targetIdx, true);
+      }
+
+      function close(focusTrigger = false) {
+        content.classList.remove('is-open');
+        content.setAttribute('aria-hidden', 'true');
+        trigger.setAttribute('aria-expanded', 'false');
+        setHighlighted(-1);
+
+        if (focusTrigger) {
+          trigger.focus();
+        }
+      }
+
+      function selectItem(item: HTMLElement) {
         const val = item.getAttribute('data-value') || '';
         const text = item.querySelector('.monolith-select-item-text')?.textContent || '';
 
-        // Update items
         items.forEach((i) => {
           i.classList.remove('is-selected');
           i.setAttribute('aria-selected', 'false');
@@ -129,39 +241,167 @@ const currentSelected = options.find((o) => (selectedValue ? o.value === selecte
         item.classList.add('is-selected');
         item.setAttribute('aria-selected', 'true');
 
-        // Update value
         valueDisplay.textContent = text;
-        nativeSelect.value = val;
-        nativeSelect.dispatchEvent(new Event('change', { bubbles: true }));
 
-        close();
-      });
-    });
+        if (nativeSelect.value !== val) {
+          nativeSelect.value = val;
+          nativeSelect.dispatchEvent(new Event('input', { bubbles: true }));
+          nativeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        }
 
-    // Handle external state sync (when nativeSelect.value is changed programmatically)
-    nativeSelect.addEventListener('change', () => {
-      const currentVal = nativeSelect.value;
-      items.forEach((item) => {
-        const itemVal = item.getAttribute('data-value');
-        if (itemVal === currentVal) {
-          item.classList.add('is-selected');
-          item.setAttribute('aria-selected', 'true');
-          valueDisplay.textContent = item.querySelector('.monolith-select-item-text')?.textContent || '';
+        close(true);
+      }
+
+      // Sync state from nativeSelect (including when changed programmatically)
+      function syncFromNative() {
+        const currentVal = nativeSelect.value;
+        let matched = false;
+        items.forEach((item) => {
+          const itemVal = item.getAttribute('data-value');
+          if (itemVal === currentVal) {
+            item.classList.add('is-selected');
+            item.setAttribute('aria-selected', 'true');
+            valueDisplay.textContent = item.querySelector('.monolith-select-item-text')?.textContent || '';
+            matched = true;
+          } else {
+            item.classList.remove('is-selected');
+            item.setAttribute('aria-selected', 'false');
+          }
+        });
+
+        if (!matched && items[0]) {
+          items[0].classList.add('is-selected');
+          items[0].setAttribute('aria-selected', 'true');
+          valueDisplay.textContent = items[0].querySelector('.monolith-select-item-text')?.textContent || '';
+        }
+      }
+
+      // Intercept direct value assignment on nativeSelect: el.select.value = '...'
+      const originalValueDescriptor = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+      if (originalValueDescriptor && originalValueDescriptor.set) {
+        const origSet = originalValueDescriptor.set;
+        Object.defineProperty(nativeSelect, 'value', {
+          set(val) {
+            origSet.call(this, val);
+            syncFromNative();
+          },
+          get() {
+            return originalValueDescriptor.get?.call(this);
+          },
+          configurable: true
+        });
+      }
+
+      nativeSelect.addEventListener('change', syncFromNative);
+      nativeSelect.addEventListener('input', syncFromNative);
+
+      // Trigger click & keyboard
+      trigger.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const isOpen = content.classList.contains('is-open');
+        if (isOpen) {
+          close(true);
         } else {
-          item.classList.remove('is-selected');
-          item.setAttribute('aria-selected', 'false');
+          open();
         }
       });
-    });
-  });
 
+      trigger.addEventListener('keydown', (e) => {
+        const isOpen = content.classList.contains('is-open');
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          if (!isOpen) {
+            open();
+          } else if (e.key === 'Enter' || e.key === ' ') {
+            if (highlightedIndex >= 0 && items[highlightedIndex]) {
+              selectItem(items[highlightedIndex]);
+            } else {
+              close(true);
+            }
+          }
+        }
+      });
+
+      // Keyboard navigation when open
+      root.addEventListener('keydown', (e) => {
+        if (!content.classList.contains('is-open')) return;
+
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          const next = highlightedIndex < items.length - 1 ? highlightedIndex + 1 : 0;
+          setHighlighted(next, true);
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          const prev = highlightedIndex > 0 ? highlightedIndex - 1 : items.length - 1;
+          setHighlighted(prev, true);
+        } else if (e.key === 'Home') {
+          e.preventDefault();
+          setHighlighted(0, true);
+        } else if (e.key === 'End') {
+          e.preventDefault();
+          setHighlighted(items.length - 1, true);
+        } else if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          if (highlightedIndex >= 0 && items[highlightedIndex]) {
+            selectItem(items[highlightedIndex]);
+          }
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          close(true);
+        } else if (e.key === 'Tab') {
+          close(false);
+        } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+          // Typeahead navigation
+          const char = e.key.toLowerCase();
+          const foundIdx = items.findIndex((item) => {
+            const text = (item.querySelector('.monolith-select-item-text')?.textContent || '').trim().toLowerCase();
+            return text.startsWith(char);
+          });
+          if (foundIdx >= 0) {
+            setHighlighted(foundIdx, true);
+          }
+        }
+      });
+
+      // Item interactions
+      items.forEach((item, index) => {
+        item.addEventListener('mouseenter', () => {
+          setHighlighted(index);
+        });
+
+        item.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          selectItem(item);
+        });
+      });
+
+      viewport.addEventListener('mouseleave', () => {
+        setHighlighted(-1);
+      });
+    });
+  }
+
+  // Close when clicking outside
   document.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
     if (!target.closest('.monolith-select-root')) {
-      document.querySelectorAll('.monolith-select-content').forEach((c) => c.classList.add('hidden'));
-      document.querySelectorAll('.monolith-select-trigger').forEach((t) => t.setAttribute('aria-expanded', 'false'));
+      document.querySelectorAll<HTMLElement>('.monolith-select-content.is-open').forEach((content) => {
+        content.classList.remove('is-open');
+        content.setAttribute('aria-hidden', 'true');
+        const trigger = content.closest('.monolith-select-root')?.querySelector<HTMLButtonElement>('.monolith-select-trigger');
+        if (trigger) trigger.setAttribute('aria-expanded', 'false');
+      });
     }
   });
+
+  // Init on load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupMonolithSelects);
+  } else {
+    setupMonolithSelects();
+  }
 </script>
 
 <style>
@@ -170,6 +410,7 @@ const currentSelected = options.find((o) => (selectedValue ? o.value === selecte
     width: 100%;
   }
 
+  /* Accessible hidden select */
   .sr-only-select {
     position: absolute;
     width: 1px;
@@ -182,7 +423,9 @@ const currentSelected = options.find((o) => (selectedValue ? o.value === selecte
     border: 0;
   }
 
-  /* Matching: flex h-9 w-full items-center justify-between gap-2 rounded-none border border-input bg-transparent px-3 py-2 text-sm whitespace-nowrap outline-none hover:border-foreground */
+  /* Monolith SelectTrigger
+     Direct match: flex h-9 w-full items-center justify-between gap-2 rounded-none border border-input bg-transparent px-3 py-2 text-sm whitespace-nowrap outline-none hover:border-foreground focus-visible:ring-1 focus-visible:ring-foreground
+  */
   .monolith-select-trigger {
     display: flex;
     height: 2.25rem; /* h-9 */
@@ -191,7 +434,7 @@ const currentSelected = options.find((o) => (selectedValue ? o.value === selecte
     justify-content: space-between;
     gap: 0.5rem;
     border-radius: 0; /* rounded-none */
-    border: 1px solid var(--border-input);
+    border: 1px solid var(--border-input, var(--border));
     background-color: transparent;
     padding: 0.5rem 0.75rem;
     font-family: var(--font-sans);
@@ -201,12 +444,16 @@ const currentSelected = options.find((o) => (selectedValue ? o.value === selecte
     outline: none;
     cursor: pointer;
     user-select: none;
-    transition: border-color var(--transition-fast);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
   }
 
-  .monolith-select-trigger:hover,
+  .monolith-select-trigger:hover {
+    border-color: var(--foreground);
+  }
+
   .monolith-select-trigger:focus-visible {
     border-color: var(--foreground);
+    box-shadow: 0 0 0 1px var(--foreground);
   }
 
   .monolith-select-value {
@@ -214,6 +461,7 @@ const currentSelected = options.find((o) => (selectedValue ? o.value === selecte
     text-overflow: ellipsis;
     white-space: nowrap;
     font-family: var(--font-sans);
+    line-height: 1;
   }
 
   .monolith-select-icon {
@@ -222,55 +470,108 @@ const currentSelected = options.find((o) => (selectedValue ? o.value === selecte
     justify-content: center;
     flex-shrink: 0;
     color: var(--muted-foreground);
+    pointer-events: none;
   }
 
-  /* Matching: z-50 min-w-[8rem] overflow-hidden rounded-none border bg-popover text-popover-foreground */
+  /* Monolith SelectContent
+     Direct match: relative z-50 min-w-[8rem] overflow-hidden rounded-none border bg-popover text-popover-foreground
+     Animation: fade-in-0 zoom-in-95 data-[side=bottom]:slide-in-from-top-2
+  */
   .monolith-select-content {
     position: absolute;
     top: calc(100% + 4px);
     left: 0;
     width: 100%;
     min-width: 8rem;
-    z-index: 100;
+    z-index: 50;
     border-radius: 0; /* rounded-none */
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-input, var(--border));
     background-color: var(--background);
     color: var(--foreground);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    outline: none;
+
+    /* Smooth animated state transitions matching Radix */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-4px) scale(0.97);
+    pointer-events: none;
+    transform-origin: top center;
+    transition:
+      opacity 150ms cubic-bezier(0.16, 1, 0.3, 1),
+      transform 150ms cubic-bezier(0.16, 1, 0.3, 1),
+      visibility 150ms;
   }
 
-  .dark .monolith-select-content {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+  .monolith-select-content.open-upward {
+    top: auto;
+    bottom: calc(100% + 4px);
+    transform-origin: bottom center;
+    transform: translateY(4px) scale(0.97);
+  }
+
+  .monolith-select-content.is-open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+  }
+
+  :global(.dark) .monolith-select-content {
+    background-color: #18181b;
+    border-color: rgba(255, 255, 255, 0.25);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.08);
   }
 
   .monolith-select-viewport {
-    padding: 0.25rem;
+    position: relative;
+    padding: 0.25rem; /* p-1 */
     max-height: 16rem;
     overflow-y: auto;
+    overflow-x: hidden;
   }
 
-  /* Matching: relative flex w-full cursor-default items-center gap-2 rounded-none py-1.5 pr-8 pl-2 text-sm select-none focus:bg-accent focus:text-accent-foreground */
+  /* Monolith SelectHighlight: Signature sliding highlight */
+  .monolith-select-highlight {
+    position: absolute;
+    top: 0;
+    left: 4px;
+    width: calc(100% - 8px);
+    border-radius: 0;
+    opacity: 0;
+    pointer-events: none;
+    background-color: var(--accent);
+    transition:
+      transform 150ms cubic-bezier(0.16, 1, 0.3, 1),
+      height 150ms cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 100ms ease-out;
+    z-index: 1;
+  }
+
+  :global(.dark) .monolith-select-highlight {
+    background-color: rgba(255, 255, 255, 0.12);
+  }
+
+  /* Monolith SelectItem
+     Direct match: relative flex w-full cursor-default items-center rounded-none py-1.5 pr-8 pl-2 text-sm select-none
+  */
   .monolith-select-item {
     position: relative;
+    z-index: 2;
     display: flex;
     width: 100%;
     align-items: center;
     justify-content: space-between;
     border-radius: 0;
-    padding: 0.375rem 0.5rem;
+    padding: 0.375rem 2rem 0.375rem 0.5rem; /* py-1.5 pr-8 pl-2 */
     font-family: var(--font-sans);
     font-size: 0.875rem;
     color: var(--foreground);
     cursor: pointer;
     user-select: none;
     outline: none;
-    transition: background-color var(--transition-fast), color var(--transition-fast);
-  }
-
-  .monolith-select-item:hover,
-  .monolith-select-item:focus {
-    background-color: var(--accent);
-    color: var(--accent-foreground);
+    background: transparent; /* Background highlight handled by .monolith-select-highlight */
   }
 
   .monolith-select-item-text {
@@ -280,21 +581,23 @@ const currentSelected = options.find((o) => (selectedValue ? o.value === selecte
     text-overflow: ellipsis;
   }
 
+  /* Monolith SelectItemIndicator
+     Direct match: absolute right-2 flex size-3.5 items-center justify-center
+  */
   .monolith-select-item-indicator {
+    position: absolute;
+    right: 0.5rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 1rem;
-    height: 1rem;
+    width: 0.875rem; /* size-3.5 */
+    height: 0.875rem;
     opacity: 0;
     color: var(--foreground);
+    transition: opacity var(--transition-fast);
   }
 
   .monolith-select-item.is-selected .monolith-select-item-indicator {
     opacity: 1;
-  }
-
-  .hidden {
-    display: none !important;
   }
 </style>
