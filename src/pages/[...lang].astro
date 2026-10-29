@@ -883,6 +883,11 @@ const u = uiText[lang] || uiText.en;
   }
   .fab-circle:hover { background: var(--muted); }
 
+  /* Optical centering: balance the right-heavy centroid of the share icon in circular frame */
+  #btn-share :global(.inline-icon) {
+    transform: translateX(-1px);
+  }
+
   .fab-text {
     font-family: var(--font-mono);
     font-size: 10px;
