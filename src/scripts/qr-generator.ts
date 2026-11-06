@@ -61,7 +61,7 @@ async function createSvgEmojiImage(text: string, size: number = 64, hue: number 
 
   // Noto Emoji naming: emoji_u[cp1]_[cp2]...
   const hexName = codePoints.join('_');
-  const url = `https://raw.githubusercontent.com/googlefonts/noto-emoji/main/svg/emoji_u${hexName}.svg`;
+  const url = `https://raw.githubusercontent.com/googlefonts/noto-emoji/v2.042/svg/emoji_u${hexName}.svg`;
 
   return new Promise((resolve) => {
     const img = new Image();
