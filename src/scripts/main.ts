@@ -1,6 +1,6 @@
 import { store, type AppState, type DotType, type EmojiMode, type ErrorCorrection } from './store';
 import { initTheme } from './theme';
-import { generateQR, downloadQR, getRawBlob } from './qr-generator';
+import { generateQR, downloadQR } from './qr-generator';
 import { checkQRReadability, hexToRgb, getLuminance } from './color-contrast';
 import { getShareUrl, loadFromUrl } from './share';
 import { getHistory, saveToHistory, deleteHistoryItem, loadHistoryItem } from './history';
@@ -11,12 +11,19 @@ let currentSvgSource: string = '';
 let isRendering = false;
 let pendingRender = false;
 
+let lastEmojiVal = '🌟';
+let lastTextVal = 'QR';
+
+function isEmojiString(str: string): boolean {
+  return /^[\p{Emoji_Presentation}\p{Extended_Pictographic}\uFE0F\u200D]+$/u.test(str.trim());
+}
+
 function debounceRender(immediate = false) {
   clearTimeout(generateTimeout);
   if (immediate) {
     renderNow();
   } else {
-    generateTimeout = window.setTimeout(renderNow, 80);
+    generateTimeout = window.setTimeout(renderNow, 60);
   }
 }
 
@@ -25,14 +32,14 @@ const el = {
   data: document.getElementById('input-data') as HTMLTextAreaElement,
   inputContainer: document.getElementById('input-container') as HTMLElement,
   btnInputClear: document.getElementById('btn-input-clear') as HTMLButtonElement,
+  sampleIndicator: document.getElementById('sample-indicator') as HTMLElement | null,
   size: document.getElementById('input-size') as HTMLSelectElement,
   margin: document.getElementById('input-margin') as HTMLInputElement,
   ec: document.getElementById('input-ec') as HTMLSelectElement,
   style: document.getElementById('input-style') as HTMLSelectElement,
   fg: document.getElementById('input-fg') as HTMLInputElement,
-  fgText: document.getElementById('input-fg-text') as HTMLInputElement,
   bg: document.getElementById('input-bg') as HTMLInputElement,
-  bgText: document.getElementById('input-bg-text') as HTMLInputElement,
+  bgColorItem: document.getElementById('bg-color-item') as HTMLElement | null,
   trans: document.getElementById('input-transparent') as HTMLInputElement,
   emojiMode: document.getElementById('input-emoji-mode') as HTMLSelectElement,
   emojiText: document.getElementById('input-emoji') as HTMLInputElement,
@@ -44,7 +51,6 @@ const el = {
   alertIcon: document.getElementById('alert-icon') as HTMLElement,
 
   btnShare: document.getElementById('btn-share') as HTMLButtonElement,
-  btnClear: document.getElementById('btn-clear') as HTMLButtonElement,
   btnPng: document.getElementById('btn-dl-png') as HTMLButtonElement,
   btnSvg: document.getElementById('btn-dl-svg') as HTMLButtonElement,
 
@@ -53,11 +59,6 @@ const el = {
   qrRadius: document.getElementById('input-qr-radius') as HTMLInputElement,
   valQrRadius: document.getElementById('val-qr-radius') as HTMLElement,
   labelMargin: document.getElementById('label-margin') as HTMLElement,
-  labelSize: document.getElementById('label-size') as HTMLElement,
-
-  statStatusBadge: document.getElementById('stat-status-badge') as HTMLElement,
-  statSizeVal: document.getElementById('stat-size-val') as HTMLElement,
-  statEcVal: document.getElementById('stat-ec-val') as HTMLElement,
 
   emojiHue: document.getElementById('input-emoji-hue') as HTMLInputElement,
   emojiSize: document.getElementById('input-emoji-size') as HTMLInputElement,
@@ -104,13 +105,13 @@ async function renderNow() {
       // 1. Generate QR Code
       currentSvgSource = (await generateQR(state, el.preview)) as string;
 
-      // 2. Check Readability
+      // 2. Check Readability (pass state.emojiMode so text vs emoji warning message matches)
       const readability = checkQRReadability(
         state.fgColor,
         state.bgColor,
         state.transparentBg,
         state.dotStyle,
-        state.emojiMode !== 'none',
+        state.emojiMode,
         state.errorCorrection,
         state.emojiSize,
         state.margin
@@ -127,11 +128,6 @@ async function renderNow() {
       const msg = msgMap[state.language] || readability.messageEn;
       el.alertText.textContent = msg;
 
-      if (el.statStatusBadge) {
-        el.statStatusBadge.className = `status-pill ${readability.level} font-mono`;
-        el.statStatusBadge.textContent = readability.level.toUpperCase();
-      }
-
       if (el.alertIcon) {
         if (readability.level === 'safe') {
           el.alertIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
@@ -142,37 +138,28 @@ async function renderNow() {
         }
       }
 
+      const hasUserInput = Boolean(el.data && el.data.value.length > 0);
       const containsMultibyte = /[^\x00-\x7F]+/.test(state.data);
-      if (containsMultibyte && state.data.length > 0) {
+      if (hasUserInput && containsMultibyte) {
         el.textWarn.classList.remove('hidden');
       } else {
         el.textWarn.classList.add('hidden');
       }
 
-      const isEmoji = /^[\p{Emoji}\p{Emoji_Presentation}\p{Extended_Pictographic}\uFE0F\u200D]+$/u.test(state.emojiText);
+      const isEmoji = isEmojiString(state.emojiText);
 
-      if (state.emojiMode !== 'none') {
-        if (isEmoji && state.emojiText.length > 0) {
-          el.emojiHueWrap?.classList.remove('hidden');
-          if (state.emojiMode === 'text') {
-            el.emojiFontWrap?.classList.add('hidden');
-            el.emojiWeightWrap?.classList.add('hidden');
-          } else {
-            el.emojiFontWrap?.classList.remove('hidden');
-            el.emojiWeightWrap?.classList.remove('hidden');
-          }
-        } else {
-          el.emojiHueWrap?.classList.add('hidden');
-          el.emojiFontWrap?.classList.remove('hidden');
-          el.emojiWeightWrap?.classList.remove('hidden');
-        }
+      if (state.emojiMode === 'image') {
+        el.emojiHueWrap?.classList.remove('hidden');
+        el.emojiFontWrap?.classList.add('hidden');
+        el.emojiWeightWrap?.classList.add('hidden');
+      } else if (state.emojiMode === 'text') {
+        el.emojiHueWrap?.classList.add('hidden');
+        el.emojiFontWrap?.classList.remove('hidden');
+        el.emojiWeightWrap?.classList.remove('hidden');
       }
 
       if (el.valQrRadius) el.valQrRadius.textContent = `${state.qrRadius}%`;
       if (el.labelMargin) el.labelMargin.textContent = `${state.margin}%`;
-      if (el.labelSize) el.labelSize.textContent = `${state.size}px`;
-      if (el.statSizeVal) el.statSizeVal.textContent = `${state.size}px`;
-      if (el.statEcVal) el.statEcVal.textContent = `${state.errorCorrection} (${state.errorCorrection === 'L' ? '7%' : state.errorCorrection === 'M' ? '15%' : state.errorCorrection === 'Q' ? '25%' : '30%'})`;
       if (el.valEmojiSize) el.valEmojiSize.textContent = `${Math.round(state.emojiSize * 100)}%`;
       if (el.valEmojiHue) el.valEmojiHue.textContent = `${state.emojiHue}°`;
       if (el.valEmojiWeight) el.valEmojiWeight.textContent = state.emojiFontWeight.toString();
@@ -195,34 +182,51 @@ function handleShare() {
   saveToHistory(store.state, currentSvgSource);
   const url = getShareUrl();
 
-  if (navigator.share && navigator.canShare) {
-    getRawBlob('png').then((blob) => {
-      if (blob) {
-        const file = new File([blob], 'qr-code.png', { type: 'image/png' });
-        if (navigator.canShare({ files: [file] })) {
-          navigator.share({
-            title: t('appTitle'),
-            url: url,
-            files: [file],
-          }).catch(() => {});
-          return;
-        }
-      }
-      navigator.share({ title: t('appTitle'), url: url }).catch(() => {});
-    }).catch(() => {
-      copyToClipboard(url);
-    });
-  } else {
-    copyToClipboard(url);
+  // Always update browser address bar with the shareable URL so it can be bookmarked/verified directly
+  try {
+    window.history.replaceState({}, '', url);
+  } catch {
+    // Ignore history API errors in restricted contexts
   }
+
+  copyToClipboard(url);
+}
+
+let toastEl: HTMLElement | null = null;
+let toastTimer: number | undefined;
+const CHECK_ICON = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+function showToast(msg: string, ok = true, ms = 4000) {
+  if (!toastEl) {
+    toastEl = document.createElement('div');
+    toastEl.className = 'toast';
+    toastEl.setAttribute('role', 'status');
+    toastEl.setAttribute('aria-live', 'polite');
+    document.body.appendChild(toastEl);
+  }
+  toastEl.textContent = '';
+  if (ok) toastEl.insertAdjacentHTML('beforeend', CHECK_ICON);
+  toastEl.append(document.createTextNode(msg));
+  toastEl.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => toastEl?.classList.remove('show'), ms);
 }
 
 function copyToClipboard(url: string) {
   navigator.clipboard.writeText(url).then(() => {
-    alert(t('copiedMsg') || 'URL Copied');
+    showToast(t('copiedMsg'));
   }).catch(() => {
-    alert(t('copiedMsg') || 'URL Copied');
+    showToast(t('copyFailedMsg'), false, 6000);
   });
+}
+
+async function saveFile(ext: 'png' | 'svg') {
+  try {
+    saveToHistory(store.state, currentSvgSource);
+    await downloadQR(store.state, ext);
+    showToast(t('savedMsg') + ' (' + ext.toUpperCase() + ')');
+  } catch {
+    showToast(t('saveFailedMsg'), false, 6000);
+  }
 }
 
 function autoResizeTextarea() {
@@ -234,11 +238,20 @@ function autoResizeTextarea() {
 }
 
 function updateClearBtnVisibility() {
-  if (!el.btnInputClear) return;
-  if (el.data.value && el.data.value.length > 0) {
-    el.btnInputClear.classList.remove('hidden');
-  } else {
-    el.btnInputClear.classList.add('hidden');
+  const hasVal = Boolean(el.data && el.data.value.length > 0);
+  if (el.btnInputClear) {
+    if (hasVal) {
+      el.btnInputClear.classList.remove('hidden');
+    } else {
+      el.btnInputClear.classList.add('hidden');
+    }
+  }
+  if (el.sampleIndicator) {
+    if (hasVal) {
+      el.sampleIndicator.classList.add('hidden');
+    } else {
+      el.sampleIndicator.classList.remove('hidden');
+    }
   }
 }
 
@@ -264,17 +277,8 @@ function bindEvents() {
     autoResizeTextarea();
     updateClearBtnVisibility();
     store.update({ data: 'https://qr.manpuc.me/' }, true);
-    debounceRender();
+    debounceRender(true);
     el.data.focus();
-  });
-
-  // Clear button (FAB)
-  el.btnClear?.addEventListener('click', () => {
-    el.data.value = '';
-    autoResizeTextarea();
-    updateClearBtnVisibility();
-    store.update({ data: 'https://qr.manpuc.me/' }, true);
-    debounceRender();
   });
 
   // Radio buttons for dotStyle
@@ -299,21 +303,37 @@ function bindEvents() {
         const mode = target.value as EmojiMode;
         el.emojiMode.value = mode;
 
+        let nextEmojiText = store.state.emojiText;
+
         if (mode === 'none') {
           el.emojiWrap.classList.add('hidden');
           el.emojiCommonControls.classList.add('hidden');
           el.emojiTextControls.classList.add('hidden');
         } else if (mode === 'image') {
+          if (!isEmojiString(nextEmojiText)) {
+            nextEmojiText = lastEmojiVal || '🌟';
+            el.emojiText.value = nextEmojiText;
+          }
+          el.emojiText.placeholder = '🌟';
           el.emojiWrap.classList.remove('hidden');
           el.emojiCommonControls.classList.remove('hidden');
           el.emojiTextControls.classList.add('hidden');
         } else {
+          if (isEmojiString(nextEmojiText)) {
+            nextEmojiText = lastTextVal || 'QR';
+            el.emojiText.value = nextEmojiText;
+          }
+          el.emojiText.placeholder = 'QR';
           el.emojiWrap.classList.remove('hidden');
           el.emojiCommonControls.classList.remove('hidden');
           el.emojiTextControls.classList.remove('hidden');
         }
 
-        store.update({ emojiMode: mode });
+        const nextEc: ErrorCorrection = mode !== 'none' ? 'H' : store.state.errorCorrection;
+        if (mode !== 'none') {
+          el.ec.value = 'H';
+        }
+        store.update({ emojiMode: mode, emojiText: nextEmojiText, errorCorrection: nextEc });
       }
     });
   });
@@ -333,76 +353,23 @@ function bindEvents() {
   });
 
   // Colors
-  const openColorPicker = (colorInput: HTMLInputElement) => {
-    if ('showPicker' in HTMLInputElement.prototype) {
-      try {
-        colorInput.showPicker();
-        return;
-      } catch (err) {
-        // Fallback to click if showPicker is blocked
-      }
-    }
-    colorInput.click();
-  };
-
   el.fg.addEventListener('input', (e) => {
     const val = (e.target as HTMLInputElement).value;
-    el.fgText.value = val;
     store.update({ fgColor: val }, true);
     debounceRender();
-  });
-  el.fgText.addEventListener('input', (e) => {
-    let val = (e.target as HTMLInputElement).value;
-    if (!val.startsWith('#')) val = '#' + val;
-    if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
-      el.fg.value = val;
-      store.update({ fgColor: val }, true);
-      debounceRender();
-    }
-  });
-  el.fgText.addEventListener('change', (e) => {
-    let val = (e.target as HTMLInputElement).value;
-    if (!val.startsWith('#')) val = '#' + val;
-    el.fg.value = val;
-    store.update({ fgColor: val });
-  });
-  el.fgText.addEventListener('click', () => {
-    openColorPicker(el.fg);
   });
 
   el.bg.addEventListener('input', (e) => {
     const val = (e.target as HTMLInputElement).value;
-    el.bgText.value = val;
     store.update({ bgColor: val }, true);
     debounceRender();
   });
-  el.bgText.addEventListener('input', (e) => {
-    let val = (e.target as HTMLInputElement).value;
-    if (!val.startsWith('#')) val = '#' + val;
-    if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
-      el.bg.value = val;
-      store.update({ bgColor: val }, true);
-      debounceRender();
-    }
-  });
-  el.bgText.addEventListener('change', (e) => {
-    let val = (e.target as HTMLInputElement).value;
-    if (!val.startsWith('#')) val = '#' + val;
-    el.bg.value = val;
-    store.update({ bgColor: val });
-  });
-  el.bgText.addEventListener('click', () => {
-    openColorPicker(el.bg);
-  });
 
   el.trans.addEventListener('change', (e) => {
-    store.update({ transparentBg: (e.target as HTMLInputElement).checked });
-  });
-
-  el.margin.addEventListener('input', (e) => {
-    const val = parseInt((e.target as HTMLInputElement).value) || 0;
-    store.update({ margin: val }, true);
-    debounceRender();
+    const checked = (e.target as HTMLInputElement).checked;
+    el.bg.disabled = checked;
+    el.bgColorItem?.classList.toggle('is-disabled', checked);
+    store.update({ transparentBg: checked });
   });
 
   el.qrRadius.addEventListener('input', (e) => {
@@ -411,18 +378,19 @@ function bindEvents() {
     debounceRender();
   });
 
-  let isIME = false;
-  el.emojiText.addEventListener('compositionstart', () => { isIME = true; });
-  el.emojiText.addEventListener('compositionend', (e) => {
-    isIME = false;
-    store.update({ emojiText: (e.target as HTMLInputElement).value }, true);
-    debounceRender();
-  });
-  el.emojiText.addEventListener('input', (e) => {
-    if (isIME) return;
-    store.update({ emojiText: (e.target as HTMLInputElement).value }, true);
-    debounceRender();
-  });
+  const handleEmojiInputChange = (e: Event) => {
+    const val = (e.target as HTMLInputElement).value;
+    if (store.state.emojiMode === 'image' && isEmojiString(val)) {
+      lastEmojiVal = val;
+    } else if (store.state.emojiMode === 'text' && !isEmojiString(val) && val.trim().length > 0) {
+      lastTextVal = val;
+    }
+    store.update({ emojiText: val }, true);
+    debounceRender(true);
+  };
+  el.emojiText.addEventListener('input', handleEmojiInputChange);
+  el.emojiText.addEventListener('change', handleEmojiInputChange);
+  el.emojiText.addEventListener('compositionend', handleEmojiInputChange);
 
   el.emojiHue.addEventListener('input', (e) => {
     const val = parseInt((e.target as HTMLInputElement).value);
@@ -436,7 +404,7 @@ function bindEvents() {
   });
   el.emojiFont.addEventListener('change', (e) => {
     store.update({ emojiFont: (e.target as HTMLSelectElement).value }, true);
-    debounceRender();
+    debounceRender(true);
   });
   el.emojiWeight.addEventListener('input', (e) => {
     const val = parseInt((e.target as HTMLInputElement).value);
@@ -447,13 +415,12 @@ function bindEvents() {
   // Sharing
   el.btnShare?.addEventListener('click', handleShare);
 
-  el.btnPng.addEventListener('click', () => {
-    saveToHistory(store.state, currentSvgSource);
-    downloadQR(store.state, 'png');
-  });
-  el.btnSvg.addEventListener('click', () => {
-    saveToHistory(store.state, currentSvgSource);
-    downloadQR(store.state, 'svg');
+  el.btnPng.addEventListener('click', () => saveFile('png'));
+  el.btnSvg.addEventListener('click', () => saveFile('svg'));
+
+  document.getElementById('btn-reset-design')?.addEventListener('click', () => {
+    store.resetDesign();
+    showToast(t('resetDoneMsg'));
   });
 
   window.addEventListener('qr-history-updated', renderHistory);
@@ -469,10 +436,10 @@ function updateFormFromState() {
   el.ec.value = state.errorCorrection;
   el.style.value = state.dotStyle;
   el.fg.value = state.fgColor;
-  el.fgText.value = state.fgColor;
   el.bg.value = state.bgColor;
-  el.bgText.value = state.bgColor;
   el.trans.checked = state.transparentBg;
+  el.bg.disabled = state.transparentBg;
+  el.bgColorItem?.classList.toggle('is-disabled', state.transparentBg);
   el.emojiMode.value = state.emojiMode;
   el.emojiText.value = state.emojiText;
   el.qrRadius.value = state.qrRadius.toString();
@@ -484,8 +451,6 @@ function updateFormFromState() {
 
   if (el.valQrRadius) el.valQrRadius.textContent = `${state.qrRadius}%`;
   if (el.labelMargin) el.labelMargin.textContent = `${state.margin}%`;
-  if (el.labelSize) el.labelSize.textContent = `${state.size}px`;
-  if (el.statSizeVal) el.statSizeVal.textContent = `${state.size}px`;
 
   // Sync radio buttons
   const dotRadio = document.querySelector(`input[name="dotStyle"][value="${state.dotStyle}"]`) as HTMLInputElement;
@@ -538,6 +503,17 @@ function getHistoryPreviewSrc(svg: string): string {
   return '';
 }
 
+function getDotStyleLabel(style: DotType | undefined, lang: string): string {
+  const map: Record<string, Record<string, string>> = {
+    ja: { square: '四角', dots: '丸', rounded: '角丸' },
+    en: { square: 'Square', dots: 'Dots', rounded: 'Rounded' },
+    zh: { square: '方形', dots: '圆点', rounded: '圆角' },
+    es: { square: 'Cuadrado', dots: 'Puntos', rounded: 'Redondeado' },
+  };
+  const dict = map[lang] || map.en;
+  return dict[style || 'rounded'] || (style || 'rounded');
+}
+
 function renderHistory() {
   const items = getHistory();
   if (items.length === 0) {
@@ -548,20 +524,31 @@ function renderHistory() {
   if (el.historySec) el.historySec.style.display = 'block';
   el.historyList.innerHTML = '';
 
-  const isJa = store.state.language === 'ja';
+  const lang = store.state.language;
+  const isJa = lang === 'ja';
+  const localeMap: Record<string, string> = {
+    ja: 'ja-JP',
+    en: 'en-US',
+    zh: 'zh-CN',
+    es: 'es-ES',
+  };
+  const dateLocale = localeMap[lang] || 'en-US';
   const reuseTitle = t('loadHistory') || (isJa ? '再利用' : 'Reuse');
   const deleteTitle = t('deleteLabel') || (isJa ? '削除' : 'Delete');
 
   items.forEach(item => {
     const div = document.createElement('div');
     div.className = 'history-item';
-    div.setAttribute('role', 'button');
-    div.setAttribute('tabindex', '0');
 
-    const date = new Date(item.date).toLocaleString(isJa ? 'ja-JP' : 'en-US', {
+    const date = new Date(item.date).toLocaleString(dateLocale, {
       month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
     });
-    const displayData = item.state.data || 'https://...';
+    const s = item.state;
+    const dotLabel = getDotStyleLabel(s.dotStyle, lang);
+    const centerBadge = s.emojiMode && s.emojiMode !== 'none' && s.emojiText ? ` · ${s.emojiText}` : '';
+    const metaSummary = `${date} · ${s.size || 256}px · ${dotLabel} · ${s.errorCorrection || 'M'}${centerBadge}`;
+
+    const displayData = s.data || 'https://qr.manpuc.me/';
     const previewSrc = getHistoryPreviewSrc(item.svg);
 
     div.innerHTML = `
@@ -599,7 +586,7 @@ function renderHistory() {
     }
 
     const dateEl = div.querySelector('.history-item-date') as HTMLElement;
-    if (dateEl) dateEl.textContent = date;
+    if (dateEl) dateEl.textContent = metaSummary;
 
     const dataEl = div.querySelector('.history-item-data') as HTMLElement;
     if (dataEl) dataEl.textContent = displayData;
@@ -615,14 +602,6 @@ function renderHistory() {
 
       loadHistoryItem(item.id);
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-
-    div.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        loadHistoryItem(item.id);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
     });
 
     el.historyList.appendChild(div);

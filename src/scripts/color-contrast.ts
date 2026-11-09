@@ -67,26 +67,28 @@ export function checkQRReadability(
   bgHex: string,
   isTransparentBg: boolean,
   dotStyle: string,
-  hasEmoji: boolean,
+  hasEmojiOrMode: boolean | 'none' | 'image' | 'text',
   errorCorrection: string,
   emojiSize: number = 0.4,
   margin: number = 10
 ): ReadabilityResult {
-  // 基本指標
-  let ratio = getContrastRatio(fgHex, bgHex);
-  const { brightnessDiff, colorDiff } = getBrightnessAndColorDiff(fgHex, bgHex);
+  const hasCenter = typeof hasEmojiOrMode === 'boolean' ? hasEmojiOrMode : hasEmojiOrMode !== 'none';
+  const isTextMode = hasEmojiOrMode === 'text';
+
+  // 基本指標 (背景透過時は背景色が無効化されるため、背景色とのコントラスト比較を行わない)
+  const ratio = isTransparentBg ? 21 : getContrastRatio(fgHex, bgHex);
+  const { brightnessDiff, colorDiff } = isTransparentBg
+    ? { brightnessDiff: 255, colorDiff: 765 }
+    : getBrightnessAndColorDiff(fgHex, bgHex);
 
   let effectiveRatio = ratio;
-
-  // 背景透過の場合のペナルティ
-  if (isTransparentBg) {
-    effectiveRatio *= 0.7;
-  }
 
   // QRコードの反転(明るい前景色・暗い背景色)チェック
   const fg = hexToRgb(fgHex);
   const bg = hexToRgb(bgHex);
-  const isReverted = (fg && bg) ? getLuminance(fg.r, fg.g, fg.b) > getLuminance(bg.r, bg.g, bg.b) : false;
+  const isReverted = (!isTransparentBg && fg && bg)
+    ? getLuminance(fg.r, fg.g, fg.b) > getLuminance(bg.r, bg.g, bg.b)
+    : false;
 
   const messagesJa: string[] = [];
   const messagesEn: string[] = [];
@@ -135,10 +137,10 @@ export function checkQRReadability(
     suggestionsEs.push('El margen es 0 (se recomienda 4px+).');
   }
 
-  // 絵文字と誤り訂正能力の検証
+  // 中央アイコン/テキストと誤り訂正能力の検証
   let emojiCapacityExceeded = false;
   let emojiCapacityDanger = false;
-  if (hasEmoji) {
+  if (hasCenter) {
     const ecCapacities: Record<string, number> = { L: 0.07, M: 0.15, Q: 0.25, H: 0.30 };
     const maxCapacity = ecCapacities[errorCorrection] || 0.15;
     const areaCovered = emojiSize * emojiSize;
@@ -148,15 +150,30 @@ export function checkQRReadability(
       if (areaCovered > maxCapacity + 0.02) {
         emojiCapacityDanger = true;
       }
-      messagesJa.push(`絵文字サイズ(${Math.round(areaCovered * 100)}%)が誤り訂正能力(${Math.round(maxCapacity * 100)}%)を超過。`);
-      messagesEn.push(`Emoji size (${Math.round(areaCovered * 100)}%) exceeds EC capacity (${Math.round(maxCapacity * 100)}%).`);
-      messagesZh.push(`表情尺寸 (${Math.round(areaCovered * 100)}%) 超过容错上限 (${Math.round(maxCapacity * 100)}%)。`);
-      messagesEs.push(`El tamaño del emoji (${Math.round(areaCovered * 100)}%) supera la capacidad CE (${Math.round(maxCapacity * 100)}%).`);
+      const pctCovered = Math.round(areaCovered * 100);
+      const pctMax = Math.round(maxCapacity * 100);
 
-      suggestionsJa.push('誤り訂正「H」を選択するか絵文字を小さくしてください。');
-      suggestionsEn.push('Set Error Correction to "H" or shrink emoji.');
-      suggestionsZh.push('请将容错设为“H”或缩小表情。');
-      suggestionsEs.push('Ajusta la corrección de errores a "H" o reduce el emoji.');
+      if (isTextMode) {
+        messagesJa.push(`テキストサイズ(${pctCovered}%)が誤り訂正能力(${pctMax}%)を超過。`);
+        messagesEn.push(`Text size (${pctCovered}%) exceeds EC capacity (${pctMax}%).`);
+        messagesZh.push(`文本尺寸 (${pctCovered}%) 超过容错上限 (${pctMax}%)。`);
+        messagesEs.push(`El tamaño del texto (${pctCovered}%) supera la capacidad CE (${pctMax}%).`);
+
+        suggestionsJa.push('誤り訂正「H」を選択するかテキストを小さくしてください。');
+        suggestionsEn.push('Set Error Correction to "H" or shrink text.');
+        suggestionsZh.push('请将容错设为“H”或缩小文本。');
+        suggestionsEs.push('Ajusta la corrección de errores a "H" o reduce el texto.');
+      } else {
+        messagesJa.push(`絵文字サイズ(${pctCovered}%)が誤り訂正能力(${pctMax}%)を超過。`);
+        messagesEn.push(`Emoji size (${pctCovered}%) exceeds EC capacity (${pctMax}%).`);
+        messagesZh.push(`表情尺寸 (${pctCovered}%) 超过容错上限 (${pctMax}%)。`);
+        messagesEs.push(`El tamaño del emoji (${pctCovered}%) supera la capacidad CE (${pctMax}%).`);
+
+        suggestionsJa.push('誤り訂正「H」を選択するか絵文字を小さくしてください。');
+        suggestionsEn.push('Set Error Correction to "H" or shrink emoji.');
+        suggestionsZh.push('请将容错设为“H”或缩小表情。');
+        suggestionsEs.push('Ajusta la corrección de errores a "H" o reduce el emoji.');
+      }
     } else if (errorCorrection !== 'H') {
       messagesJa.push('誤り訂正「H」を推奨。');
       messagesEn.push('Level "H" recommended.');

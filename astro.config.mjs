@@ -7,6 +7,12 @@ import sitemap from '@astrojs/sitemap';
 export default defineConfig({
   site: 'https://qr.manpuc.me',
   output: 'static',
+  vite: {
+    server: {
+      // ngrok などのトンネル経由で dev サーバーを確認するための許可ホスト
+      allowedHosts: ['smashup-retreat-brigade.ngrok-free.dev'],
+    },
+  },
   i18n: {
     defaultLocale: 'ja',
     locales: ['ja', 'en', 'zh', 'es'],

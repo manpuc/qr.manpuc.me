@@ -294,6 +294,7 @@ const currentSelected = options.find((o) => (selectedValue ? o.value === selecte
 
       nativeSelect.addEventListener('change', syncFromNative);
       nativeSelect.addEventListener('input', syncFromNative);
+      syncFromNative();
 
       // Trigger click & keyboard
       trigger.addEventListener('click', (e) => {

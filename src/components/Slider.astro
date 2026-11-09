@@ -50,8 +50,8 @@ const resolvedAriaLabel = ariaLabel || label;
         const min = parseFloat(slider.min) || 0;
         const max = parseFloat(slider.max) || 100;
         const val = parseFloat(slider.value) || 0;
-        const percent = max > min ? Math.max(0, Math.min(100, ((val - min) / (max - min)) * 100)) : 0;
-        slider.style.setProperty('--slider-progress', `${percent}%`);
+        const ratio = max > min ? Math.max(0, Math.min(1, (val - min) / (max - min))) : 0;
+        slider.style.setProperty('--slider-progress', `calc(8px + (100% - 16px) * ${ratio})`);
       }
 
       // Initial progress update
@@ -60,6 +60,38 @@ const resolvedAriaLabel = ariaLabel || label;
       // Drag/Input updates
       slider.addEventListener('input', updateProgress);
       slider.addEventListener('change', updateProgress);
+
+      // Consistent keyboard stepping across all browsers and range spans
+      slider.addEventListener('keydown', (e) => {
+        const min = parseFloat(slider.min) || 0;
+        const max = parseFloat(slider.max) || 100;
+        const baseStep = parseFloat(slider.step) || 1;
+        const current = parseFloat(slider.value) || 0;
+        let next: number | null = null;
+
+        if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+          const delta = e.shiftKey ? baseStep * 5 : baseStep;
+          next = Math.min(max, current + delta);
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+          const delta = e.shiftKey ? baseStep * 5 : baseStep;
+          next = Math.max(min, current - delta);
+        } else if (e.key === 'PageUp') {
+          next = Math.min(max, current + baseStep * 5);
+        } else if (e.key === 'PageDown') {
+          next = Math.max(min, current - baseStep * 5);
+        } else if (e.key === 'Home') {
+          next = min;
+        } else if (e.key === 'End') {
+          next = max;
+        }
+
+        if (next !== null && next !== current) {
+          e.preventDefault();
+          slider.value = String(next);
+          slider.dispatchEvent(new Event('input', { bubbles: true }));
+          slider.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      });
 
       // Intercept direct programmatic property assignment: slider.value = ...
       const originalValueDescriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
@@ -101,7 +133,7 @@ const resolvedAriaLabel = ariaLabel || label;
      Range: absolute h-full bg-foreground
   */
   .monolith-range-slider {
-    --slider-progress: 0%;
+    --slider-progress: 8px;
     -webkit-appearance: none;
     appearance: none;
     width: 100%;

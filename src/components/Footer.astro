@@ -141,11 +141,17 @@ const { lang } = Astro.props;
       document.documentElement.setAttribute('data-theme', 'light');
     }
 
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (metaThemeColor) {
+      metaThemeColor.setAttribute('content', isDark ? '#000000' : '#ffffff');
+    }
+
     if (pref === 'system') {
       localStorage.removeItem('manpuc-theme');
     } else {
       localStorage.setItem('manpuc-theme', pref);
     }
+    localStorage.removeItem('qr_maker_theme');
 
     themeItems.forEach(item => {
       if (item.getAttribute('data-theme-val') === pref) {

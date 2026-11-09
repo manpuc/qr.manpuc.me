@@ -22,11 +22,30 @@ export function getHistory(): HistoryItem[] {
   return [];
 }
 
+function getVisualFingerprint(s: Partial<AppState>): string {
+  return JSON.stringify({
+    data: s.data,
+    margin: s.margin,
+    fgColor: s.fgColor,
+    bgColor: s.bgColor,
+    transparentBg: s.transparentBg,
+    dotStyle: s.dotStyle,
+    emojiMode: s.emojiMode,
+    emojiText: s.emojiMode && s.emojiMode !== 'none' ? s.emojiText : '',
+    emojiFont: s.emojiMode === 'text' ? s.emojiFont : '',
+    emojiFontWeight: s.emojiMode === 'text' ? s.emojiFontWeight : 0,
+    emojiHue: s.emojiMode && s.emojiMode !== 'none' ? s.emojiHue : 0,
+    emojiSize: s.emojiMode && s.emojiMode !== 'none' ? s.emojiSize : 0,
+    errorCorrection: s.errorCorrection,
+    qrRadius: s.qrRadius,
+  });
+}
+
 export function saveToHistory(state: AppState, svg: string) {
   const current = getHistory();
 
   // Clone relevant state to save
-  const stateToSave = {
+  const stateToSave: Partial<AppState> = {
     data: state.data,
     size: state.size,
     margin: state.margin,
@@ -36,17 +55,18 @@ export function saveToHistory(state: AppState, svg: string) {
     dotStyle: state.dotStyle,
     emojiMode: state.emojiMode,
     emojiText: state.emojiText,
+    emojiFont: state.emojiFont,
+    emojiFontWeight: state.emojiFontWeight,
+    emojiHue: state.emojiHue,
+    emojiSize: state.emojiSize,
     errorCorrection: state.errorCorrection,
     qrRadius: state.qrRadius
   };
 
-  // Avoid saving exactly same state if it's the latest
-  if (current.length > 0) {
-    const last = current[0].state;
-    if (JSON.stringify(last) === JSON.stringify(stateToSave)) {
-      return; // Skip duplicate consecutive saves
-    }
-  }
+  const targetFp = getVisualFingerprint(stateToSave);
+
+  // Deduplicate across all existing history items with the same visual fingerprint
+  const deduplicated = current.filter(item => getVisualFingerprint(item.state) !== targetFp);
 
   const newItem: HistoryItem = {
     id: Date.now().toString(),
@@ -55,8 +75,8 @@ export function saveToHistory(state: AppState, svg: string) {
     svg: svg
   };
 
-  current.unshift(newItem);
-  const trimmed = current.slice(0, MAX_HISTORY);
+  deduplicated.unshift(newItem);
+  const trimmed = deduplicated.slice(0, MAX_HISTORY);
 
   localStorage.setItem(HISTORY_KEY, JSON.stringify(trimmed));
 

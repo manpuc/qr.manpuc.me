@@ -4,11 +4,18 @@ import { type AppState, store } from './store';
 // Handle Vite/CJS default export quirk
 const QRCodeStyling = (qrCodeStylingModule as any).default || qrCodeStylingModule;
 
-// Keep reference to recreate or update
+// Keep reference to latest instance
 let qrCode: any = null;
 
 // Offscreen canvas for rendering text as image
-function createTextEmojiImage(text: string, size: number = 64, fontFamily: string = '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif', weight: number = 700, hue: number = 0): Promise<string> {
+function createTextEmojiImage(
+  text: string,
+  size: number = 64,
+  fontFamily: string = '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif',
+  weight: number = 700,
+  hue: number = 0,
+  fillColor: string = '#000000'
+): Promise<string> {
   return new Promise((resolve) => {
     const canvas = document.createElement('canvas');
     canvas.width = size;
@@ -36,11 +43,12 @@ function createTextEmojiImage(text: string, size: number = 64, fontFamily: strin
 
     ctx.textAlign = 'center';
     ctx.textBaseline = 'alphabetic'; // Reliable for manual calculation
-    ctx.fillStyle = '#000000';
+    ctx.fillStyle = fillColor || '#000000';
 
     // Mathematically perfect centering using font metrics with fallback
-    const actualAscent = metrics.actualBoundingBoxAscent ?? (fontSize * 0.8);
-    const actualDescent = metrics.actualBoundingBoxDescent ?? (fontSize * 0.2);
+    const refreshedMetrics = ctx.measureText(text);
+    const actualAscent = refreshedMetrics.actualBoundingBoxAscent ?? (fontSize * 0.8);
+    const actualDescent = refreshedMetrics.actualBoundingBoxDescent ?? (fontSize * 0.2);
     const actualHeight = actualAscent + actualDescent;
     const yPos = (size / 2) + (actualHeight / 2) - actualDescent;
 
@@ -55,9 +63,13 @@ function createTextEmojiImage(text: string, size: number = 64, fontFamily: strin
 async function createSvgEmojiImage(text: string, size: number = 64, hue: number = 0): Promise<string> {
   const codePoints = [...text]
     .map(c => c.codePointAt(0)?.toString(16).toLowerCase())
-    .filter(cp => cp !== undefined && cp !== 'fe0f'); // Noto often omits FE0F for single chars but keep check
+    .filter(cp => cp !== undefined && cp !== 'fe0f');
 
   if (codePoints.length === 0) return '';
+
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    return createTextEmojiImage(text, size, undefined, undefined, hue);
+  }
 
   // Noto Emoji naming: emoji_u[cp1]_[cp2]...
   const hexName = codePoints.join('_');
@@ -88,9 +100,6 @@ async function createSvgEmojiImage(text: string, size: number = 64, hue: number 
     };
 
     img.onerror = () => {
-      // Try fallback without FE0F first? 
-      // Actually most modern combinations like 🧑‍💻 or 🐈‍⬛ are complex.
-      // If perfectly matching SVG is not found, fallback to system font (Text Mode)
       fallback();
     };
 
@@ -101,48 +110,38 @@ async function createSvgEmojiImage(text: string, size: number = 64, hue: number 
       if (img.complete) return;
       img.src = '';
       fallback();
-    }, 2500);
+    }, 1500);
   });
-}
-
-function applyCornerRadiusToSvg(container: HTMLElement, qrRadius: number) {
-  const svg = container.querySelector('svg');
-  if (!svg) return;
-  const bgRect = svg.querySelector('rect');
-  if (bgRect) {
-    if (qrRadius > 0) {
-      bgRect.setAttribute('rx', qrRadius.toString());
-      bgRect.setAttribute('ry', qrRadius.toString());
-    } else {
-      bgRect.removeAttribute('rx');
-      bgRect.removeAttribute('ry');
-    }
-  }
 }
 
 export async function generateQR(state: AppState, container: HTMLElement): Promise<string> {
   try {
     let imageSource = '';
-    // Set image if emoji is enabled
+    // Set image if emoji/text is enabled
     if (state.emojiMode !== 'none' && state.emojiText) {
+      const renderRes = Math.max(64, Math.round(state.size * 0.8));
       if (state.emojiMode === 'text') {
-        const renderRes = Math.max(64, Math.round(state.size * 0.8));
-        imageSource = await createTextEmojiImage(state.emojiText, renderRes, state.emojiFont, state.emojiFontWeight, state.emojiHue);
+        imageSource = await createTextEmojiImage(
+          state.emojiText,
+          renderRes,
+          state.emojiFont,
+          state.emojiFontWeight,
+          state.emojiHue,
+          state.fgColor
+        );
       } else {
-        const renderRes = Math.max(64, Math.round(state.size * 0.8));
         imageSource = await createSvgEmojiImage(state.emojiText, renderRes, state.emojiHue);
       }
     }
 
-    // Handle rounded dots logic
     let typeNumber: 0 | undefined = 0; // auto
     const dotType = state.dotStyle === 'rounded' ? 'rounded' : (state.dotStyle === 'dots' ? 'dots' : 'square');
     const cornerSquareType = dotType === 'rounded' ? 'extra-rounded' : (dotType === 'dots' ? 'dot' : 'square');
 
-    const options = {
+    const options: any = {
       width: state.size,
       height: state.size,
-      type: 'svg', // fast rendering
+      type: 'svg',
       data: state.data || 'https://qr.manpuc.me/',
       margin: Math.round(state.size * (state.margin / 100)),
       qrOptions: {
@@ -175,30 +174,20 @@ export async function generateQR(state: AppState, container: HTMLElement): Promi
     };
 
     if (imageSource) {
-      // @ts-ignore
       options.image = imageSource;
     }
 
-    // Re-create QRCodeStyling if mode transitioned between having an image and not having an image
-    const hasImage = Boolean(imageSource);
-    const wasWithImage = qrCode && qrCode._options && Boolean(qrCode._options.image);
-    const needsRecreate = !qrCode || (wasWithImage !== hasImage);
-
-    if (needsRecreate) {
-      qrCode = new QRCodeStyling(options);
-      container.innerHTML = '';
-      qrCode.append(container);
-    } else {
-      qrCode.update(options);
+    // Always build in an offscreen staging container so image changes (e.g. 🌟 -> 🚀)
+    // and SVG clip-path wrapping never collide with stale DOM nodes.
+    const staging = document.createElement('div');
+    const nextQr = new QRCodeStyling(options);
+    nextQr.append(staging);
+    if (nextQr._svgDrawingPromise) {
+      await nextQr._svgDrawingPromise;
     }
+    qrCode = nextQr;
 
-    // Await async drawing promise from qr-code-styling if present
-    if (qrCode._svgDrawingPromise) {
-      await qrCode._svgDrawingPromise;
-    }
-
-    // Fix SVG scaling: Add viewBox so SVG always scales 100% sharply without jumping or squishing
-    const svg = container.querySelector('svg');
+    const svg = staging.querySelector('svg');
     if (svg) {
       svg.setAttribute('viewBox', `0 0 ${state.size} ${state.size}`);
       svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
@@ -214,7 +203,7 @@ export async function generateQR(state: AppState, container: HTMLElement): Promi
         const radiusPx = (state.size / 2) * (state.qrRadius / 100);
         const clipId = 'qr-frame-clip-' + Math.random().toString(36).slice(2, 8);
         const defs = svg.querySelector('defs') || svg.insertBefore(document.createElementNS('http://www.w3.org/2000/svg', 'defs'), svg.firstChild);
-        
+
         const clipPath = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
         clipPath.setAttribute('id', clipId);
         const clipRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
@@ -227,7 +216,6 @@ export async function generateQR(state: AppState, container: HTMLElement): Promi
         clipPath.appendChild(clipRect);
         defs.appendChild(clipPath);
 
-        // Group all visual children in an inner <g clip-path="..."> so coordinates match SVG viewBox
         const contentGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         contentGroup.setAttribute('clip-path', `url(#${clipId})`);
         const children = Array.from(svg.childNodes);
@@ -238,6 +226,8 @@ export async function generateQR(state: AppState, container: HTMLElement): Promi
         }
         svg.appendChild(contentGroup);
       }
+
+      container.replaceChildren(svg);
     }
 
     // Container border-radius reflects the corner radius on preview card boundary and shadow
@@ -245,8 +235,9 @@ export async function generateQR(state: AppState, container: HTMLElement): Promi
     container.style.overflow = 'hidden';
 
     // Synchronously serialize SVG for history thumbnail - ensures xmlns for valid image decoding
-    if (svg) {
-      let svgStr = serializeSvg(svg, state.size);
+    const renderedSvg = container.querySelector('svg');
+    if (renderedSvg) {
+      const svgStr = serializeSvg(renderedSvg, state.size);
       const fullSvgStr = '<?xml version="1.0" standalone="no"?>\r\n' + svgStr;
       const svgDataUri = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(fullSvgStr);
       // Pre-render PNG blob asynchronously so clicking "PNG 保存" downloads 100% synchronously
@@ -332,7 +323,6 @@ export async function getRawBlob(ext: 'png' | 'svg'): Promise<Blob | null> {
 }
 
 export function downloadBlob(blob: Blob, filename: string) {
-  // Wrap binary in standard File object so Chromium registers filename metadata in its internal blob store
   let file: File;
   try {
     file = new File([blob], filename, { type: blob.type || 'application/octet-stream' });
@@ -349,11 +339,8 @@ export function downloadBlob(blob: Blob, filename: string) {
   a.style.display = 'none';
   document.body.appendChild(a);
 
-  // Synchronous click within user gesture
   a.click();
 
-  // Safely clean up DOM element after download starts, and retain the Object URL
-  // for 2 minutes so Chrome's download manager has plenty of time to finish streaming
   setTimeout(() => {
     if (a.parentNode) {
       a.parentNode.removeChild(a);
@@ -379,7 +366,6 @@ export async function downloadQR(state: AppState, ext: 'png' | 'svg', _sizeMulti
       return;
     }
   } else {
-    // If pre-rendered PNG blob is ready, download 100% synchronously within the click event
     if (cachedPngBlob) {
       downloadBlob(cachedPngBlob, filename);
       return;
@@ -401,7 +387,6 @@ export async function downloadQR(state: AppState, ext: 'png' | 'svg', _sizeMulti
     }
   }
 
-  // Fallback if needed
   const blob = await getRawBlob(ext);
   if (blob) {
     downloadBlob(blob, filename);

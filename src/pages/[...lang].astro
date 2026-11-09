@@ -3,7 +3,6 @@ import Layout from "../layouts/Layout.astro";
 import Icon from "../components/Icon.astro";
 import Select from "../components/Select.astro";
 import Slider from "../components/Slider.astro";
-
 export function getStaticPaths() {
   return [
     { params: { lang: undefined } }, // Root (ja)
@@ -12,10 +11,8 @@ export function getStaticPaths() {
     { params: { lang: "es" } }, // Spanish
   ];
 }
-
 const { lang: langParam } = Astro.params;
 const lang = langParam || "ja";
-
 // SSR side i18n text lookup
 const pageText: Record<string, { title: string; description: string }> = {
   ja: {
@@ -35,19 +32,19 @@ const pageText: Record<string, { title: string; description: string }> = {
     description: "Herramienta de generación de códigos QR del lado del cliente sin registro. Componentes Monolith UI, vista previa en tiempo real y exportación SVG/PNG.",
   },
 };
-
 const pt = pageText[lang] || pageText.en;
 const title = pt.title;
 const description = pt.description;
-
 const uiText: Record<string, Record<string, string>> = {
   ja: {
     contentLabel: "URL / テキスト",
+    sampleNote: "サンプル表示中: https://qr.manpuc.me/",
     placeholderText: "https://... またはテキストを入力",
     clearLabel: "入力をクリア",
     preview: "プレビュー",
     dots: "ドット",
     dotStyleAria: "ドットの形状",
+    dotSquare: "四角", dotDots: "丸", dotRounded: "角丸", fontSans: "ゴシック", fontSerif: "明朝", fontMono: "等幅", resetDesign: "デザイン設定をリセット",
     color: "色",
     fgColor: "前景色",
     bgColor: "背景色",
@@ -87,11 +84,13 @@ const uiText: Record<string, Record<string, string>> = {
   },
   en: {
     contentLabel: "URL / Text",
+    sampleNote: "Sample: https://qr.manpuc.me/",
     placeholderText: "https://... or enter text",
     clearLabel: "Clear input",
     preview: "Preview",
     dots: "Dots",
     dotStyleAria: "Dot style",
+    dotSquare: "Square", dotDots: "Dots", dotRounded: "Rounded", fontSans: "Sans-serif", fontSerif: "Serif", fontMono: "Monospace", resetDesign: "Reset design settings",
     color: "Color",
     fgColor: "Foreground",
     bgColor: "Background",
@@ -131,11 +130,13 @@ const uiText: Record<string, Record<string, string>> = {
   },
   zh: {
     contentLabel: "网址 / 文本",
+    sampleNote: "当前示例: https://qr.manpuc.me/",
     placeholderText: "https://... 或输入文本",
     clearLabel: "清空输入",
     preview: "预览",
     dots: "点阵",
     dotStyleAria: "点阵样式",
+    dotSquare: "方形", dotDots: "圆点", dotRounded: "圆角", fontSans: "无衬线", fontSerif: "衬线", fontMono: "等宽", resetDesign: "重置设计设置",
     color: "颜色",
     fgColor: "前景色",
     bgColor: "背景色",
@@ -175,11 +176,13 @@ const uiText: Record<string, Record<string, string>> = {
   },
   es: {
     contentLabel: "URL / Texto",
+    sampleNote: "Ejemplo: https://qr.manpuc.me/",
     placeholderText: "https://... o escribe un texto",
     clearLabel: "Borrar entrada",
     preview: "Vista previa",
     dots: "Puntos",
     dotStyleAria: "Estilo de puntos",
+    dotSquare: "Cuadrado", dotDots: "Puntos", dotRounded: "Redondeado", fontSans: "Sans-serif", fontSerif: "Serif", fontMono: "Monoespaciada", resetDesign: "Restablecer diseño",
     color: "Color",
     fgColor: "Primer plano",
     bgColor: "Fondo",
@@ -218,15 +221,12 @@ const uiText: Record<string, Record<string, string>> = {
     textWarning: "Los caracteres multibyte pueden aparecer distorsionados en algunos lectores.",
   },
 };
-
 const u = uiText[lang] || uiText.en;
 ---
-
 <Layout title={title} description={description} lang={lang}>
   <div class="page">
     <main class="studio">
       <h1 class="sr-only">QR MAKER</h1>
-
       <!-- QR preview -->
       <section class="preview-area" aria-label={u.preview}>
         <div class="preview-sticky">
@@ -239,11 +239,11 @@ const u = uiText[lang] || uiText.en;
           </div>
         </div>
       </section>
-
       <!-- URL / Text input (below QR) -->
       <section class="field input-field" aria-label={u.contentLabel}>
         <div class="input-header">
           <label for="input-data" class="label">{u.contentLabel}</label>
+          <span id="sample-indicator" class="sample-badge">{u.sampleNote}</span>
         </div>
         <div class="input-container" id="input-container">
           <textarea
@@ -271,7 +271,6 @@ const u = uiText[lang] || uiText.en;
           {u.textWarning}
         </p>
       </section>
-
       <!-- All settings (statically expanded) -->
       <section class="options">
         <div class="options-body">
@@ -281,37 +280,40 @@ const u = uiText[lang] || uiText.en;
               <label class="monolith-radio-item">
                 <input type="radio" name="dotStyle" value="square" />
                 <div class="monolith-radio-box"><div class="monolith-radio-dot"></div></div>
-                <span>Square</span>
+                <span>{u.dotSquare}</span>
               </label>
               <label class="monolith-radio-item">
                 <input type="radio" name="dotStyle" value="dots" />
                 <div class="monolith-radio-box"><div class="monolith-radio-dot"></div></div>
-                <span>Dots</span>
+                <span>{u.dotDots}</span>
               </label>
               <label class="monolith-radio-item">
                 <input type="radio" name="dotStyle" value="rounded" checked />
                 <div class="monolith-radio-box"><div class="monolith-radio-dot"></div></div>
-                <span>Rounded</span>
+                <span>{u.dotRounded}</span>
               </label>
             </div>
             <select id="input-style" class="hidden" aria-hidden="true" tabindex="-1">
-              <option value="square">Square</option>
-              <option value="dots">Dots</option>
-              <option value="rounded" selected>Rounded</option>
+              <option value="square">{u.dotSquare}</option>
+              <option value="dots">{u.dotDots}</option>
+              <option value="rounded" selected>{u.dotRounded}</option>
             </select>
           </div>
-
           <div class="field">
             <span class="label">{u.color}</span>
             <div class="color-row">
-              <label class="swatch" title={u.fgColor}>
-                <input type="color" id="input-fg" value="#000000" aria-label={u.fgPickerAria} />
-                <input type="text" id="input-fg-text" value="#000000" maxlength="7" spellcheck="false" class="hex" aria-label={u.fgColor} />
-              </label>
-              <label class="swatch" title={u.bgColor}>
-                <input type="color" id="input-bg" value="#ffffff" aria-label={u.bgPickerAria} />
-                <input type="text" id="input-bg-text" value="#ffffff" maxlength="7" spellcheck="false" class="hex" aria-label={u.bgColor} />
-              </label>
+              <div class="color-control-item">
+                <label class="swatch" title={u.fgColor}>
+                  <span class="color-sublabel">{u.fgColor}</span>
+                  <input type="color" id="input-fg" value="#000000" aria-label={u.fgPickerAria} />
+                </label>
+              </div>
+              <div class="color-control-item" id="bg-color-item">
+                <label class="swatch" title={u.bgColor}>
+                  <span class="color-sublabel">{u.bgColor}</span>
+                  <input type="color" id="input-bg" value="#ffffff" aria-label={u.bgPickerAria} />
+                </label>
+              </div>
               <label class="monolith-checkbox-label">
                 <input type="checkbox" id="input-transparent" />
                 <div class="monolith-checkbox-box">
@@ -321,7 +323,6 @@ const u = uiText[lang] || uiText.en;
               </label>
             </div>
           </div>
-
           <div class="field">
             <span class="label">{u.center}</span>
             <div class="center-row">
@@ -354,15 +355,14 @@ const u = uiText[lang] || uiText.en;
             <p id="emoji-warning" class="note hidden">
               {u.emojiWarning}
             </p>
-
             <div id="emoji-common-controls" class="grid-2 hidden">
               <div class="slider" id="emoji-size-wrap">
                 <div class="slider-head"><span class="label">{u.size}</span><span id="val-emoji-size" class="val">40%</span></div>
-                <Slider id="input-emoji-size" min="10" max="50" value="40" ariaLabel={u.emojiSizeAria} />
+                <Slider id="input-emoji-size" min="10" max="50" step="1" value="40" ariaLabel={u.emojiSizeAria} />
               </div>
               <div class="slider hidden" id="emoji-hue-wrap">
                 <div class="slider-head"><span class="label">{u.hue}</span><span id="val-emoji-hue" class="val">0°</span></div>
-                <Slider id="input-emoji-hue" min="0" max="360" value="0" ariaLabel={u.emojiHueAria} />
+                <Slider id="input-emoji-hue" min="0" max="360" step="1" value="0" ariaLabel={u.emojiHueAria} />
               </div>
             </div>
             <div id="emoji-text-controls" class="grid-2 hidden">
@@ -372,9 +372,9 @@ const u = uiText[lang] || uiText.en;
                   id="input-emoji-font"
                   ariaLabel={u.fontAria}
                   options={[
-                    { value: "sans-serif", label: "Sans-serif", selected: true },
-                    { value: "serif", label: "Serif" },
-                    { value: "monospace", label: "Monospace" },
+                    { value: "sans-serif", label: u.fontSans, selected: true },
+                    { value: "serif", label: u.fontSerif },
+                    { value: "monospace", label: u.fontMono },
                     { value: "'Space Mono', monospace", label: "Space Mono" },
                     { value: "'Quicksand', sans-serif", label: "Quicksand" }
                   ]}
@@ -386,7 +386,6 @@ const u = uiText[lang] || uiText.en;
               </div>
             </div>
           </div>
-
           <div class="field">
             <span class="label">{u.advanced}</span>
             <div class="grid-2">
@@ -404,7 +403,7 @@ const u = uiText[lang] || uiText.en;
                 />
               </div>
               <div class="slider">
-                <div class="slider-head"><span class="label">{u.resolution}</span><span id="label-size" class="val">256px</span></div>
+                <span class="label">{u.resolution}</span>
                 <Select
                   id="input-size"
                   ariaLabel={u.resolution}
@@ -418,32 +417,28 @@ const u = uiText[lang] || uiText.en;
               </div>
               <div class="slider">
                 <div class="slider-head"><span class="label">{u.margin}</span><span id="label-margin" class="val">5%</span></div>
-                <Slider id="input-margin" min="0" max="25" value="5" ariaLabel={u.margin} />
+                <Slider id="input-margin" min="0" max="25" step="1" value="5" ariaLabel={u.margin} />
               </div>
               <div class="slider">
                 <div class="slider-head"><span class="label">{u.cornerRadius}</span><span id="val-qr-radius" class="val">10%</span></div>
-                <Slider id="input-qr-radius" min="0" max="100" value="10" ariaLabel={u.cornerRadiusAria} />
+                <Slider id="input-qr-radius" min="0" max="100" step="1" value="10" ariaLabel={u.cornerRadiusAria} />
               </div>
             </div>
           </div>
         </div>
+        <button type="button" id="btn-reset-design" class="reset-btn">{u.resetDesign}</button>
       </section>
-
       <!-- Floating / Inline Actions (Download, Share, Clear) -->
       <div class="fab-row">
-        <button type="button" id="btn-clear" class="fab-circle" aria-label={u.clearAria} title={u.clear}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-        </button>
         <button type="button" id="btn-share" class="fab-circle" aria-label={u.shareAria} title={u.share}>
           <Icon name="share" />
         </button>
         <button type="button" id="btn-dl-svg" class="fab-circle fab-text" aria-label={u.saveSvgAria} title="SVG">SVG</button>
-        <button type="button" id="btn-dl-png" class="fab-pill">
+        <button type="button" id="btn-dl-png" class="fab-pill" aria-label={u.savePng}>
           <span class="fab-pill-label">{u.savePng}</span>
           <Icon name="download" />
         </button>
       </div>
-
       <!-- History (collapsible) -->
       <details id="history-section" class="history-details" style="display: none;">
         <summary class="history-summary">
@@ -454,10 +449,8 @@ const u = uiText[lang] || uiText.en;
       </details>
     </main>
   </div>
-
   <script src="../scripts/main.ts"></script>
 </Layout>
-
 <style>
   .page {
     flex: 1;
@@ -465,7 +458,6 @@ const u = uiText[lang] || uiText.en;
     display: flex;
     justify-content: center;
   }
-
   .studio {
     width: 100%;
     max-width: 640px;
@@ -476,14 +468,12 @@ const u = uiText[lang] || uiText.en;
     flex-direction: column;
     gap: 0;
   }
-
   @media (min-width: 520px) {
     .studio {
       padding: 3.5rem 2rem 5rem;
       gap: 0;
     }
   }
-
   .sr-only {
     position: absolute;
     width: 1px;
@@ -492,7 +482,6 @@ const u = uiText[lang] || uiText.en;
     clip: rect(0 0 0 0);
     white-space: nowrap;
   }
-
   /* URL / Content Input */
   .input-field {
     width: 100%;
@@ -506,13 +495,21 @@ const u = uiText[lang] || uiText.en;
       margin-bottom: 3.25rem;
     }
   }
-
   .input-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
   }
-
+  .sample-badge {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    color: var(--muted-foreground);
+  }
+  .sample-badge.hidden {
+    display: none;
+  }
   .input-container {
     position: relative;
     display: flex;
@@ -526,18 +523,14 @@ const u = uiText[lang] || uiText.en;
     transition: border-bottom-color var(--transition-fast);
     cursor: text;
   }
-
   .input-container:hover {
     border-bottom-color: var(--muted-foreground);
   }
-
   .input-container:focus-within {
     border-bottom-color: var(--foreground);
     background-color: transparent;
     box-shadow: none;
   }
-
-
   .hero-input {
     flex: 1;
     min-height: 1.75rem;
@@ -556,24 +549,21 @@ const u = uiText[lang] || uiText.en;
     field-sizing: content;
     overflow: hidden;
   }
-
   .hero-input::placeholder {
     color: var(--muted-foreground);
-    opacity: 0.5;
+    opacity: 0.85;
   }
-
   @media (min-width: 640px) {
     .hero-input {
       font-size: 1.5rem;
     }
   }
-
   .input-clear-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 2.25rem;
+    height: 2.25rem;
     border: none;
     background: transparent;
     color: var(--muted-foreground);
@@ -583,27 +573,26 @@ const u = uiText[lang] || uiText.en;
     padding: 0;
     transition: color var(--transition-fast), background-color var(--transition-fast), transform var(--transition-fast);
   }
-
   .input-clear-btn:hover {
     color: var(--foreground);
     background-color: var(--border);
   }
-
+  .input-clear-btn:focus-visible {
+    outline: 1px solid var(--foreground);
+    outline-offset: 2px;
+  }
   .input-clear-btn:active {
     transform: scale(0.9);
   }
-
   .input-clear-btn.hidden {
     display: none;
   }
-
   .note {
-    font-family: var(--font-mono);
-    font-size: 11px;
+    font-family: var(--font-sans);
+    font-size: 12px;
     color: var(--muted-foreground);
     margin-top: 0.5rem;
   }
-
   /* Preview */
   .preview-area {
     width: 100%;
@@ -616,7 +605,6 @@ const u = uiText[lang] || uiText.en;
       margin-bottom: 2.75rem;
     }
   }
-
   .preview-sticky {
     width: 100%;
     max-width: 320px;
@@ -625,7 +613,6 @@ const u = uiText[lang] || uiText.en;
     align-items: center;
     gap: 0.875rem;
   }
-
   .qr-holder {
     aspect-ratio: 1 / 1;
     width: 100%;
@@ -651,23 +638,25 @@ const u = uiText[lang] || uiText.en;
     display: block;
     aspect-ratio: 1 / 1;
   }
-
   .qr-loading {
     opacity: 0.2;
     font-size: 1.5rem;
   }
-
   /* Readability: smooth fade without vertical layout jump */
   .contrast-banner {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     gap: 0.5rem;
-    font-family: var(--font-mono);
-    font-size: 11px;
+    font-family: var(--font-sans);
+    font-size: 12px;
     line-height: 1.5;
     min-height: 1.25rem;
     transition: opacity var(--transition-fast);
+  }
+  .banner-text {
+    white-space: pre-line;
+    text-align: center;
   }
   .contrast-banner.safe {
     opacity: 0;
@@ -681,8 +670,7 @@ const u = uiText[lang] || uiText.en;
     opacity: 1;
     color: var(--color-danger);
   }
-  .banner-icon { flex-shrink: 0; margin-top: 1px; }
-
+  .banner-icon { flex-shrink: 0; margin-top: 2px; }
   /* Options */
   .options {
     width: 100%;
@@ -693,33 +681,28 @@ const u = uiText[lang] || uiText.en;
       margin-bottom: 2.75rem;
     }
   }
-
   .options-body {
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 1.75rem;
   }
-  @media (min-width: 640px) {
-    .options-body {
-      gap: 2.25rem;
-    }
+  .options-body > .field + .field {
+    border-top: 1px solid var(--border);
+    padding-top: 1.75rem;
   }
-
   .field {
     display: flex;
     flex-direction: column;
     gap: 0.875rem;
   }
-
   .label {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 0.12em;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
     color: var(--muted-foreground);
   }
-
   .grid-2 {
     display: grid;
     grid-template-columns: 1fr;
@@ -728,7 +711,6 @@ const u = uiText[lang] || uiText.en;
   @media (min-width: 520px) {
     .grid-2 { grid-template-columns: 1fr 1fr; }
   }
-
   .slider {
     display: flex;
     flex-direction: column;
@@ -745,7 +727,6 @@ const u = uiText[lang] || uiText.en;
     font-variant-numeric: tabular-nums;
     color: var(--foreground);
   }
-
   .color-row,
   .center-row {
     display: flex;
@@ -753,11 +734,28 @@ const u = uiText[lang] || uiText.en;
     align-items: center;
     gap: 1.25rem;
   }
-
+  .color-control-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: opacity var(--transition-fast);
+  }
+  .color-control-item.is-disabled {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+  .color-sublabel {
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted-foreground);
+  }
   .swatch {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
+    min-height: 2.25rem;
+    padding: 0.25rem 0;
     cursor: pointer;
   }
   .swatch input[type="color"] {
@@ -772,38 +770,17 @@ const u = uiText[lang] || uiText.en;
     cursor: pointer;
     overflow: hidden;
   }
+  .swatch input[type="color"]:focus-visible {
+    outline: 1px solid var(--foreground);
+    outline-offset: 2px;
+  }
   .swatch input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
   .swatch input[type="color"]::-webkit-color-swatch { border: none; border-radius: 9999px; }
   .swatch input[type="color"]::-moz-color-swatch { border: none; border-radius: 9999px; }
-
-  .hex {
-    width: 7ch;
-    border: none;
-    background: transparent;
-    outline: none;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    text-transform: uppercase;
-    color: var(--foreground);
-    cursor: pointer;
-    transition: opacity var(--transition-fast);
-  }
-  .hex:hover {
-    text-decoration: underline;
-    text-underline-offset: 4px;
-  }
-  .hex:focus,
-  .hex:focus-visible {
-    cursor: text;
-    text-decoration: underline;
-    text-underline-offset: 4px;
-  }
-
   .emoji-input {
     width: 4.5rem;
     text-align: center;
   }
-
   /* History */
   .history-details {
     width: 100%;
@@ -836,7 +813,6 @@ const u = uiText[lang] || uiText.en;
     flex-direction: column;
     padding-top: 0.5rem;
   }
-
   /* Actions (Download, Share, Clear) */
   .fab-row {
     position: fixed;
@@ -858,7 +834,6 @@ const u = uiText[lang] || uiText.en;
       padding: 0.75rem 0 0.25rem;
     }
   }
-
   .fab-circle,
   .fab-pill {
     display: inline-flex;
@@ -873,7 +848,6 @@ const u = uiText[lang] || uiText.en;
   .fab-pill:active { transform: scale(0.96); }
   .fab-circle:focus-visible,
   .fab-pill:focus-visible { outline: 1px solid var(--foreground); outline-offset: 2px; }
-
   .fab-circle {
     width: 3rem;
     background: var(--background);
@@ -882,23 +856,20 @@ const u = uiText[lang] || uiText.en;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   }
   .fab-circle:hover { background: var(--muted); }
-
   /* Optical centering: balance the right-heavy centroid of the share icon in circular frame */
   #btn-share :global(.inline-icon) {
     transform: translateX(-1px);
   }
-
   .fab-text {
     font-family: var(--font-mono);
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.06em;
   }
-
   .fab-pill {
-    gap: 0.75rem;
-    width: 3rem;
-    padding: 0;
+    gap: 0.625rem;
+    width: auto;
+    padding: 0 1.25rem;
     background: var(--foreground);
     color: var(--background);
     border: none;
@@ -906,7 +877,7 @@ const u = uiText[lang] || uiText.en;
   }
   .fab-pill:hover { opacity: 0.9; }
   .fab-pill-label {
-    display: none;
+    display: inline;
     font-family: var(--font-mono);
     font-size: 12px;
     font-weight: 700;
@@ -914,7 +885,6 @@ const u = uiText[lang] || uiText.en;
     text-transform: uppercase;
   }
   @media (min-width: 640px) {
-    .fab-pill { width: auto; padding: 0 1.5rem; }
-    .fab-pill-label { display: inline; }
+    .fab-pill { gap: 0.75rem; padding: 0 1.5rem; }
   }
 </style>

@@ -22,7 +22,7 @@ export interface AppState {
   qrRadius: number; // QRコード背景の角丸
 }
 
-const defaultState: AppState = {
+export const defaultState: AppState = {
   data: 'https://qr.manpuc.me/',
   size: 256,
   margin: 5,
@@ -44,6 +44,17 @@ const defaultState: AppState = {
 
 type Listener = (state: AppState) => void;
 
+function clearStaleShareUrl() {
+  if (typeof window === 'undefined') return;
+  try {
+    if (window.location.search || window.location.hash.startsWith('#q=')) {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  } catch {
+    // Ignore history API errors in restricted contexts
+  }
+}
+
 class Store {
   public state: AppState;
   private listeners: Listener[] = [];
@@ -54,7 +65,9 @@ class Store {
 
   load() {
     try {
-      const saved = localStorage.getItem('qr_maker_state_v2');
+      // Remove legacy localStorage draft key so new tabs always start clean
+      localStorage.removeItem('qr_maker_state_v2');
+      const saved = sessionStorage.getItem('qr_maker_state_v2');
       if (saved) {
         const parsed = JSON.parse(saved);
         // Migrate legacy px values to percentage
@@ -67,9 +80,11 @@ class Store {
         this.state = { ...this.state, ...parsed };
       }
 
-      const savedTheme = localStorage.getItem('qr_maker_theme') as 'light' | 'dark' | 'auto';
-      if (savedTheme) {
+      const savedTheme = localStorage.getItem('manpuc-theme');
+      if (savedTheme === 'light' || savedTheme === 'dark') {
         this.state.theme = savedTheme;
+      } else {
+        this.state.theme = 'auto';
       }
 
       // 言語判定の優先順位: 1. URLパス (/en/, /zh/, /es/), 2. html要素の lang 属性
@@ -102,7 +117,7 @@ class Store {
 
   save() {
     try {
-      localStorage.setItem('qr_maker_state_v2', JSON.stringify({
+      sessionStorage.setItem('qr_maker_state_v2', JSON.stringify({
         data: this.state.data,
         size: this.state.size,
         margin: this.state.margin,
@@ -119,7 +134,6 @@ class Store {
         errorCorrection: this.state.errorCorrection,
         qrRadius: this.state.qrRadius,
       }));
-      localStorage.setItem('qr_maker_theme', this.state.theme);
       localStorage.setItem('qr_maker_lang', this.state.language);
     } catch (e) {
       console.error('Failed to save state', e);
@@ -129,9 +143,25 @@ class Store {
   update(partial: Partial<AppState>, noNotify = false) {
     this.state = { ...this.state, ...partial };
     this.save();
+    clearStaleShareUrl();
     if (!noNotify) {
       this.notify();
     }
+  }
+
+  replaceFromUrl(partial: Partial<AppState>) {
+    const { theme, language } = this.state;
+    this.state = { ...defaultState, theme, language, ...partial };
+    this.save();
+    this.notify();
+  }
+
+  resetDesign() {
+    const { data, theme, language } = this.state;
+    this.state = { ...defaultState, data, theme, language };
+    this.save();
+    clearStaleShareUrl();
+    this.notify();
   }
 
   subscribe(listener: Listener) {

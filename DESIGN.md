@@ -1,6 +1,6 @@
 ---
 name: QR Maker
-description: Essentialist, borderless QR code studio directly modeled on char.manpuc.me and ui.manpuc.me Monolith standards
+description: Essentialist, hairline-bordered QR code studio directly modeled on char.manpuc.me and ui.manpuc.me Monolith standards
 colors:
   primary: "#000000"
   neutral-bg: "#ffffff"
@@ -108,10 +108,10 @@ components:
 **Creative North Star: "The Borderless Canvas"**
 
 QR Maker directly adopts the visual philosophy of `char.manpuc.me`:
-1. **Borderless by Default**: No heavy box outlines, grid borders, or arbitrary card containers enclosing the interface. Layout is organized via generous whitespace, typographic scale, and delicate subtle division lines.
+1. **Hairline, Not Heavy**: Structural elements use 0px radius and 1px borders only; no heavy outlines or arbitrary card containers. Layout is organized via generous whitespace, typographic scale, and delicate division lines.
 2. **Hero Input**: Seamless, expansive textarea with transparent background and soft placeholder, identical to `char.manpuc.me`'s main writing canvas.
-3. **Floating Meta-Actions**: Circular (48px) and pill-shaped floating action buttons anchored at the bottom-right, decoupling meta-utilities (Clear, Share, PNG, SVG download) from the content layer.
-4. **Segmented Pills & Swatches**: Controls use modern rounded pill chips (`rounded-full`) and compact color pickers without intrusive input frames.
+3. **Floating Meta-Actions**: Circular (48px) and pill-shaped floating action buttons anchored at the bottom-right, decoupling meta-utilities (Share, PNG, SVG download; clear lives inside the input) from the content layer.
+4. **Rounding Exceptions**: Only floating action buttons (pill, 9999px), color swatches, and radio/checkbox dots are round. The QR frame (12px) is a known deviation scheduled for review. Everything else is 0px.
 5. **Universal Footer**: Shared 3-column MANPUC footer with vertical brand logo, navigation links, and theme/language selector.
 
 ## Colors
