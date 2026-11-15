@@ -5,7 +5,7 @@ import Select from "../components/Select.astro";
 import Slider from "../components/Slider.astro";
 export function getStaticPaths() {
   return [
-    { params: { lang: undefined } }, // Root (ja)
+    { params: { lang: "ja" } }, // Japanese
     { params: { lang: "en" } }, // English
     { params: { lang: "zh" } }, // Chinese
     { params: { lang: "es" } }, // Spanish

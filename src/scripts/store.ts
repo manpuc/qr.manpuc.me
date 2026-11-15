@@ -87,12 +87,14 @@ class Store {
         this.state.theme = 'auto';
       }
 
-      // 言語判定の優先順位: 1. URLパス (/en/, /zh/, /es/), 2. html要素の lang 属性
+      // 言語判定の優先順位: 1. URLパス (/ja/, /en/, /zh/, /es/), 2. html要素の lang 属性
       if (typeof window !== 'undefined') {
         const path = window.location.pathname;
         const htmlLang = document.documentElement.lang;
 
-        if (path.startsWith('/en')) {
+        if (path.startsWith('/ja')) {
+          this.state.language = 'ja';
+        } else if (path.startsWith('/en')) {
           this.state.language = 'en';
         } else if (path.startsWith('/zh')) {
           this.state.language = 'zh';
