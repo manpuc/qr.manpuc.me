@@ -9,6 +9,11 @@
     <title>QR Maker</title>
     <script is:inline>
       (function () {
+        if ("serviceWorker" in navigator) {
+          navigator.serviceWorker.getRegistration().then(function (r) {
+            if (r) r.update();
+          }).catch(function () {});
+        }
         if (window.location.pathname !== "/" && window.location.pathname !== "/index.html") return;
         var supported = ["ja", "en", "zh", "es"];
         var lang = "";
