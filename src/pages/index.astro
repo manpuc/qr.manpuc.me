@@ -9,6 +9,7 @@
     <title>QR Maker</title>
     <script is:inline>
       (function () {
+        if (window.location.pathname !== "/" && window.location.pathname !== "/index.html") return;
         var supported = ["ja", "en", "zh", "es"];
         var lang = "";
         try {
